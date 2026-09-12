@@ -52,7 +52,7 @@ class GeminiVoiceEngine(
         listOf(
             ChatMessage(
                 sender = MessageSender.ARUSHI,
-                text = "Namaste! I'm Arushi, your AI assistant. You can speak to me in English, Hindi, Hinglish, or any language. Try saying 'WhatsApp kholo', 'Call Mom', or 'Open YouTube'!"
+                text = "নমস্কার! আমি আরুশী, আপনার এআই সহকারী। (Namaste! I'm Arushi, your AI assistant). আপনি আমার সাথে বাংলা (Bengali), English বা হিন্দি-তে কথা বলতে পারেন। ট্রাই করুন '০১৮৯০২৬০৬৬৪ নম্বরে কল করো', 'হোয়াটসঅ্যাপ খোলো' বা 'ইউটিউব খোলো'!"
             )
         )
     )
@@ -61,8 +61,19 @@ class GeminiVoiceEngine(
     private val _status = MutableStateFlow(AssistantStatus.IDLE)
     val status: StateFlow<AssistantStatus> = _status.asStateFlow()
 
-    private val _currentLanguage = MutableStateFlow("Auto-Detect")
+    private val _currentLanguage = MutableStateFlow("বাংলা (Bengali)")
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
+
+    fun setLanguage(lang: String) {
+        _currentLanguage.value = lang
+        val reply = when {
+            lang.contains("Bengali") || lang.contains("বাংলা") -> "বাংলা ভাষা নির্বাচন করা হয়েছে। বলুন, ০১৮৯০২৬০৬৬৪ নম্বরে কল করতে চান নাকি অন্য কোনো কাজ করতে চান?"
+            lang.contains("Hindi") || lang.contains("हिंदी") -> "हिंदी भाषा चुन ली गई है। बताइए, मैं आपकी क्या मदद कर सकती हूँ?"
+            else -> "English language selected. How can I help you today?"
+        }
+        addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply))
+        speakResponse(reply)
+    }
 
     // Multi-turn conversation history for Gemini
     private val conversationHistory = JSONArray()
@@ -145,28 +156,34 @@ class GeminiVoiceEngine(
                         put(
                             "text",
                             """
-                            You are Arushi, an intelligent, warm, cheerful Indian AI voice assistant and companion.
+                            You are Arushi, an intelligent, warm, cheerful AI voice assistant and companion.
                             
                             MULTILINGUAL RULES:
-                            - You speak and understand Hindi, English, Hinglish, Marathi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Punjabi, Urdu effortlessly.
+                            - Primary languages supported: Bengali (বাংলা), English, Hindi, Hinglish, and regional languages.
+                            - The user's preferred language is Bengali (বাংলা).
                             - Automatically detect the language of the user.
+                            - If the user speaks or writes in Bengali (or Banglish like 'kemon acho', 'call koro', 'whatsapp kholo'), respond in fluent, natural Bengali.
                             - If the user speaks Hindi, respond in fluent Hindi.
                             - If the user speaks English, respond in natural English.
-                            - If the user speaks Hinglish, respond in authentic Hinglish (e.g., 'Bilkul, main abhi WhatsApp open kar rahi hoon').
+                            - If the user speaks Hinglish, respond in authentic Hinglish.
                             - Switch languages immediately if the user switches languages mid-conversation.
                             - Keep your answers concise, warm, helpful, and formatted for natural speech.
                             
+                            PHONE NUMBER & CONTACTS:
+                            - The user's primary/target phone number is 01890260664 (Bengali digits: ০১৮৯০২৬০৬৬৪).
+                            - If the user asks to call or phone without specifying a number, or says 'call koro', '01890260664 এ কল করো', or '০১৮৯০২৬০৬৬৪ নম্বরে কল করো', call makeCall with '01890260664'.
+                            
                             APP CONTROL AND FUNCTION CALLING (CRITICAL):
                             You have real device tools available. You MUST call tools when requested:
-                            1. openWhatsApp: When user asks to open WhatsApp (e.g. 'WhatsApp kholo', 'Open WhatsApp', 'WhatsApp open karo', 'WhatsApp chalao').
-                            2. openApp(appName): When user asks to open an app (e.g. 'Open YouTube', 'Open Instagram', 'Open Chrome', 'Open Settings').
-                            3. makeCall(phoneNumber): When user asks to call a phone number (e.g. 'Call 9876543210').
-                            4. callContact(contactName): When user asks to call a contact by name (e.g. 'Call Mom', 'Call Mummy', 'Rahul ko call karo', 'Mummy ko phone lagao', 'Call Dad').
+                            1. openWhatsApp: When user asks to open WhatsApp (e.g. 'হোয়াটসঅ্যাপ খোলো', 'WhatsApp kholo', 'Open WhatsApp', 'WhatsApp open karo').
+                            2. openApp(appName): When user asks to open an app (e.g. 'ইউটিউব খোলো', 'Open YouTube', 'Open Instagram', 'Open Chrome', 'Open Settings').
+                            3. makeCall(phoneNumber): When user asks to call a phone number (e.g. '০১৮৯০২৬০৬৬৪ নম্বরে কল করো', 'Call 01890260664', 'Call 01890260664').
+                            4. callContact(contactName): When user asks to call a contact by name (e.g. 'মাকে কল করো', 'Call Mom', 'Call Mummy', 'Rahul ko call karo', 'Call Dad').
                             5. openUrl(url): When user asks to open a website.
                             
                             When a tool is executed, you will receive the real execution status from the device.
                             Acknowledge the outcome truthfully in the user's language:
-                            - If a contact wasn't found, say so gently and do not invent phone numbers.
+                            - If a contact wasn't found, say so gently in Bengali or their language and do not invent phone numbers.
                             - If multiple contacts matched, ask which one they meant.
                             - If WhatsApp or an app is opened, acknowledge cheerfully.
                             """.trimIndent()
@@ -338,10 +355,19 @@ class GeminiVoiceEngine(
      * Smart local NLP engine for instant offline execution and zero-latency handling of all test cases.
      */
     private fun executeLocalSmartEngine(input: String) {
-        val lower = input.lowercase().trim()
+        val normalized = normalizeBengaliDigits(input)
+        val lower = normalized.lowercase().trim()
 
-        // 1. Language switch commands
+        // 1. Language switch commands (Bengali, Hindi, English, Hinglish)
         when {
+            lower.contains("bangla") || lower.contains("বাংলা") || lower.contains("banglay") ||
+            lower.contains("bengali") || lower.contains("lengus") || lower.contains("language") && lower.contains("bang") -> {
+                _currentLanguage.value = "বাংলা (Bengali)"
+                val reply = "হ্যাঁ নিশ্চয়ই! এখন আমি আপনার সাথে সম্পূর্ণ বাংলায় কথা বলব। বলুন, আমি আপনাকে কীভাবে সাহায্য করতে পারি? ০১৮৯০২৬০৬৬৪ নম্বরে কল করতে চান নাকি অন্য কিছু করতে চান?"
+                addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply))
+                speakResponse(reply)
+                return
+            }
             lower.contains("hindi mein baat") || lower.contains("speak in hindi") || lower.contains("hindi me bolo") -> {
                 _currentLanguage.value = "Hindi"
                 val reply = "हाँ ज़रूर! अब मैं आपसे हिंदी में बात करूँगी। बताइए, मैं आपकी क्या मदद कर सकती हूँ?"
@@ -363,23 +389,60 @@ class GeminiVoiceEngine(
                 speakResponse(reply)
                 return
             }
-            lower.startsWith("hello") || lower == "hi arushi" || lower == "hello arushi" -> {
-                val reply = "Hello! I'm Arushi. I'm right here and ready to help you!"
+            lower.contains("kemon acho") || lower.contains("kemon achen") || input.contains("কেমন আছো") || input.contains("কেমন আছেন") -> {
+                val reply = "আমি খুব ভালো আছি! আপনি কেমন আছেন? বলুন, আপনাকে কীভাবে সাহায্য করতে পারি?"
+                addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply))
+                speakResponse(reply)
+                return
+            }
+            lower.startsWith("hello") || lower == "hi arushi" || lower == "hello arushi" || input.contains("নমস্কার") || input.contains("হ্যালো") -> {
+                val reply = if (isBengaliInput(input)) {
+                    "নমস্কার! আমি আরুশী। বলুন, আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
+                } else {
+                    "Hello! I'm Arushi. I'm right here and ready to help you!"
+                }
                 addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply))
                 speakResponse(reply)
                 return
             }
         }
 
-        // 2. Open WhatsApp variations
-        if (lower.contains("whatsapp") && (
+        // 2. Dedicated Phone Call for 01890260664 (User's specified primary number)
+        if (lower.contains("01890260664")) {
+            val isCallIntent = lower.contains("call") || lower.contains("phone") || lower.contains("dial") ||
+                lower.contains("কল") || lower.contains("ফোন") || lower.contains("koro") || lower.contains("করো")
+            if (isCallIntent) {
+                val result = deviceController.makeCall("01890260664")
+                val reply = if (result.success) {
+                    if (isBengaliInput(input)) "০১৮৯০২৬০৬৬৪ নম্বরে কল করা হচ্ছে..." else "Calling 01890260664 now."
+                } else {
+                    result.message
+                }
+                addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "makeCall(01890260664)", actionSuccess = result.success))
+                speakResponse(reply)
+                return
+            } else {
+                val reply = if (isBengaliInput(input)) {
+                    "০১৮৯০২৬০৬৬৪ নম্বরটি প্রস্তুত আছে। কল করতে বলুন '০১৮৯০২৬০৬৬৪ নম্বরে কল করো'।"
+                } else {
+                    "Number 01890260664 is configured. Say 'Call 01890260664' to dial."
+                }
+                addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "number(01890260664)", actionSuccess = true))
+                speakResponse(reply)
+                return
+            }
+        }
+
+        // 3. Open WhatsApp variations (Bengali, Hindi, English)
+        if ((lower.contains("whatsapp") || input.contains("হোয়াটসঅ্যাপ") || input.contains("হোয়াটসঅ্যাপ")) && (
                 lower.contains("kholo") || lower.contains("open") || lower.contains("karo") ||
-                lower.contains("chalao") || lower.contains("start") || lower.contains("run")
-            ) || lower == "open whatsapp" || lower == "whatsapp kholo"
+                lower.contains("chalao") || lower.contains("start") || lower.contains("run") ||
+                input.contains("খোলো") || input.contains("খুলুন")
+            ) || lower == "open whatsapp" || lower == "whatsapp kholo" || input.contains("হোয়াটসঅ্যাপ খোলো") || input.contains("হোয়াটসঅ্যাপ খোলো")
         ) {
             val result = deviceController.openWhatsApp()
             val reply = if (result.success) {
-                if (isHindiInput(lower)) "WhatsApp open kar diya hai!" else "Opening WhatsApp for you now."
+                if (isBengaliInput(input)) "হোয়াটসঅ্যাপ খোলা হয়েছে!" else if (isHindiInput(lower)) "WhatsApp open kar diya hai!" else "Opening WhatsApp for you now."
             } else {
                 result.message
             }
@@ -388,13 +451,14 @@ class GeminiVoiceEngine(
             return
         }
 
-        // 3. Direct Phone Calling by Number ("Call 9876543210")
-        val phoneMatch = Regex("(?:call|phone|dial)?\\s*(\\+?[0-9]{7,15})", RegexOption.IGNORE_CASE).find(input)
-        if (phoneMatch != null && (lower.contains("call") || lower.contains("dial") || lower.contains("phone") || input.trim().length in 7..15)) {
+        // 4. Direct Phone Calling by Number ("Call 01890260664", "০১৮৯০২৬০৬৬৪ নম্বরে কল করো", "Call 9876543210")
+        val phoneMatch = Regex("(?:call|phone|dial|কল|ফোন|ডায়াল)?\\s*(\\+?[0-9]{7,15})", RegexOption.IGNORE_CASE).find(normalized)
+        if (phoneMatch != null && (lower.contains("call") || lower.contains("dial") || lower.contains("phone") ||
+                lower.contains("কল") || lower.contains("ফোন") || normalized.trim().length in 7..15)) {
             val number = phoneMatch.groupValues[1]
             val result = deviceController.makeCall(number)
             val reply = if (result.success) {
-                if (isHindiInput(lower)) "$number par call lagaya ja raha hai." else "Calling $number now."
+                if (isBengaliInput(input)) "$number নম্বরে কল করা হচ্ছে..." else if (isHindiInput(lower)) "$number par call lagaya ja raha hai." else "Calling $number now."
             } else {
                 result.message
             }
@@ -403,11 +467,12 @@ class GeminiVoiceEngine(
             return
         }
 
-        // 4. Call Contact by Name ("Call Mom", "Mummy ko call karo", "Call Rahul")
-        val isCallCommand = lower.contains("call") || lower.contains("phone lagao") || lower.contains("call karo")
+        // 5. Call Contact by Name ("Call Mom", "মাকে কল করো", "আম্মুকে কল করো", "Mummy ko call karo", "Call Rahul")
+        val isCallCommand = lower.contains("call") || lower.contains("phone lagao") || lower.contains("call karo") ||
+            lower.contains("phone koro") || input.contains("কল করো") || input.contains("ফোন করো") || input.contains("ফোন লাগাও")
         if (isCallCommand) {
             val contactName = extractContactName(input)
-            if (contactName.isNotBlank()) {
+            if (contactName.isNotBlank() && !contactName.matches(Regex("[0-9]+"))) {
                 val result = deviceController.callContact(contactName)
                 val reply = result.message
                 addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "callContact", actionSuccess = result.success))
@@ -416,55 +481,77 @@ class GeminiVoiceEngine(
             }
         }
 
-        // 5. Open Apps (YouTube, Instagram, Chrome, Settings)
-        if (lower.contains("youtube") && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao"))) {
+        // 6. Open Apps (YouTube, Instagram, Chrome, Settings)
+        if ((lower.contains("youtube") || input.contains("ইউটিউব")) && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao") || input.contains("খোলো") || input.contains("খুলুন"))) {
             val res = deviceController.openApp("YouTube")
-            val reply = if (res.success) "Opening YouTube." else res.message
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "ইউটিউব খোলা হচ্ছে।" else "Opening YouTube."
+            } else res.message
             addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "openApp(YouTube)", actionSuccess = res.success))
             speakResponse(reply)
             return
         }
-        if (lower.contains("instagram") && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao"))) {
+        if ((lower.contains("instagram") || input.contains("ইন্সটাগ্রাম")) && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao") || input.contains("খোলো") || input.contains("খুলুন"))) {
             val res = deviceController.openApp("Instagram")
-            val reply = if (res.success) "Opening Instagram." else res.message
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "ইন্সটাগ্রাম খোলা হচ্ছে।" else "Opening Instagram."
+            } else res.message
             addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "openApp(Instagram)", actionSuccess = res.success))
             speakResponse(reply)
             return
         }
-        if (lower.contains("chrome") && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao"))) {
+        if ((lower.contains("chrome") || input.contains("ক্রোম")) && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao") || input.contains("খোলো") || input.contains("খুলুন"))) {
             val res = deviceController.openApp("Chrome")
-            val reply = if (res.success) "Opening Google Chrome." else res.message
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "গুগল ক্রোম খোলা হচ্ছে।" else "Opening Google Chrome."
+            } else res.message
             addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "openApp(Chrome)", actionSuccess = res.success))
             speakResponse(reply)
             return
         }
-        if (lower.contains("setting") && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao"))) {
+        if ((lower.contains("setting") || input.contains("সেটিংস")) && (lower.contains("open") || lower.contains("kholo") || lower.contains("chalao") || input.contains("খোলো") || input.contains("খুলুন"))) {
             val res = deviceController.openApp("Settings")
-            val reply = if (res.success) "Opening Device Settings." else res.message
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "ডিভাইস সেটিংস খোলা হচ্ছে।" else "Opening Device Settings."
+            } else res.message
             addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "openApp(Settings)", actionSuccess = res.success))
             speakResponse(reply)
             return
         }
 
         // Generic Open App extraction ("Open Spotify", etc.)
-        val openAppMatch = Regex("(?:open|kholo|chalao)\\s+([a-zA-Z0-9]+)", RegexOption.IGNORE_CASE).find(input)
+        val openAppMatch = Regex("(?:open|kholo|chalao|খোলো|খুলুন)\\s+([a-zA-Z0-9]+)", RegexOption.IGNORE_CASE).find(input)
         if (openAppMatch != null) {
             val target = openAppMatch.groupValues[1]
             val res = deviceController.openApp(target)
-            val reply = if (res.success) "Opening $target." else res.message
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "$target খোলা হচ্ছে।" else "Opening $target."
+            } else res.message
             addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = reply, actionBadge = "openApp($target)", actionSuccess = res.success))
             speakResponse(reply)
             return
         }
 
         // Default conversational response
-        val defaultReply = if (isHindiInput(lower)) {
+        val defaultReply = if (isBengaliInput(input)) {
+            "আমি বুঝতে পেরেছি! আপনি আমাকে হোয়াটসঅ্যাপ খুলতে, ০১৮৯০২৬০৬৬৪ নম্বরে কল করতে বা ইউটিউব খুলতে বলতে পারেন।"
+        } else if (isHindiInput(lower)) {
             "Main samajh gayi! Aap mujhe WhatsApp kholne, kisi ko call karne ya koi bhi sawal poochne ke liye bol sakte hain."
         } else {
-            "I'm here! You can ask me to open WhatsApp, call a contact, open apps like YouTube, or speak in Hindi/English."
+            "I'm here! You can ask me to call 01890260664, open WhatsApp, or speak in বাংলা, English or Hindi."
         }
         addMessage(ChatMessage(sender = MessageSender.ARUSHI, text = defaultReply))
         speakResponse(defaultReply)
+    }
+
+    private fun normalizeBengaliDigits(input: String): String {
+        val bengaliDigits = "০১২৩৪৫৬৭৮৯"
+        val standardDigits = "0123456789"
+        var res = input
+        for (i in 0 until 10) {
+            res = res.replace(bengaliDigits[i], standardDigits[i])
+        }
+        return res
     }
 
     private fun extractContactName(input: String): String {
@@ -474,11 +561,28 @@ class GeminiVoiceEngine(
             .replace("ko call karo", "")
             .replace("ko phone lagao", "")
             .replace("phone lagao", "")
+            .replace("phone koro", "")
+            .replace("কল করো", "")
+            .replace("ফোন করো", "")
+            .replace("কে কল করো", "")
+            .replace("কে ফোন করো", "")
+            .replace("নম্বরে কল করো", "")
             .replace("call", "")
             .replace("my", "")
+            .replace("আমার", "")
             .trim()
 
         return clean.split(" ").firstOrNull { it.isNotBlank() }?.replaceFirstChar { it.uppercase() } ?: ""
+    }
+
+    private fun isBengaliInput(input: String): Boolean {
+        val bengaliTokens = listOf(
+            "koro", "korun", "kholo", "bolo", "bolun", "kotha", "kemon", "achho", "achen",
+            "amake", "amar", "tumi", "apni", "hobe", "lengus", "bangla", "banglay", "bhalo",
+            "shunte", "khulun", "chalao", "shuru", "dada", "didi"
+        )
+        return bengaliTokens.any { input.lowercase().contains(it) } ||
+               input.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.BENGALI }
     }
 
     private fun isHindiInput(input: String): Boolean {
@@ -489,8 +593,8 @@ class GeminiVoiceEngine(
     private fun updateLanguageIndicator(text: String) {
         val lower = text.lowercase()
         when {
+            text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.BENGALI } || isBengaliInput(text) -> _currentLanguage.value = "বাংলা (Bengali)"
             text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.DEVANAGARI } -> _currentLanguage.value = "Hindi / Marathi"
-            text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.BENGALI } -> _currentLanguage.value = "Bengali"
             text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.TAMIL } -> _currentLanguage.value = "Tamil"
             text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.TELUGU } -> _currentLanguage.value = "Telugu"
             isHindiInput(lower) -> _currentLanguage.value = "Hinglish / Hindi"

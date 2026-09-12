@@ -203,10 +203,24 @@ class AndroidDeviceController(private val context: Context) {
     }
 
     /**
+     * Converts Bengali numerals (০-৯) to standard Arabic numerals (0-9).
+     */
+    private fun normalizeBengaliDigits(input: String): String {
+        val bengaliDigits = "০১২৩৪৫৬৭৮৯"
+        val standardDigits = "0123456789"
+        var res = input
+        for (i in 0 until 10) {
+            res = res.replace(bengaliDigits[i], standardDigits[i])
+        }
+        return res
+    }
+
+    /**
      * Initiates a phone call or opens the dialer safely.
      */
     fun makeCall(phoneNumber: String): ExecutionResult {
-        val cleanNumber = phoneNumber.replace(Regex("[^0-9+]"), "")
+        val normalized = normalizeBengaliDigits(phoneNumber)
+        val cleanNumber = normalized.replace(Regex("[^0-9+]"), "")
         if (cleanNumber.isBlank()) {
             return ExecutionResult(false, "makeCall", "Invalid phone number provided.")
         }
@@ -248,19 +262,23 @@ class AndroidDeviceController(private val context: Context) {
         val query = contactName.trim().lowercase()
         val canonicalQueries = mutableListOf(query)
 
-        // Expand common relation aliases (Hindi / English / Hinglish)
+        // Expand common relation aliases (Bengali / Hindi / English / Hinglish)
         when {
-            query.contains("mom") || query.contains("mummy") || query.contains("mother") || query.contains("maa") -> {
-                canonicalQueries.addAll(listOf("mom", "mummy", "mother", "maa", "ammi", "mataji"))
+            query.contains("mom") || query.contains("mummy") || query.contains("mother") || query.contains("maa") ||
+            query.contains("মা") || query.contains("আম্মা") || query.contains("আম্মু") -> {
+                canonicalQueries.addAll(listOf("mom", "mummy", "mother", "maa", "ammi", "mataji", "মা", "আম্মা", "আম্মু"))
             }
-            query.contains("dad") || query.contains("daddy") || query.contains("papa") || query.contains("father") -> {
-                canonicalQueries.addAll(listOf("dad", "daddy", "papa", "father", "abbu", "pitaji"))
+            query.contains("dad") || query.contains("daddy") || query.contains("papa") || query.contains("father") ||
+            query.contains("বাবা") || query.contains("আব্বু") || query.contains("আব্বা") -> {
+                canonicalQueries.addAll(listOf("dad", "daddy", "papa", "father", "abbu", "pitaji", "বাবা", "আব্বু", "আব্বা"))
             }
-            query.contains("bro") || query.contains("brother") || query.contains("bhai") -> {
-                canonicalQueries.addAll(listOf("bhai", "brother", "bhaiya"))
+            query.contains("bro") || query.contains("brother") || query.contains("bhai") ||
+            query.contains("ভাই") || query.contains("ভাইয়া") || query.contains("ভাইয়া") -> {
+                canonicalQueries.addAll(listOf("bhai", "brother", "bhaiya", "ভাই", "ভাইয়া", "ভাইয়া"))
             }
-            query.contains("sis") || query.contains("sister") || query.contains("didi") -> {
-                canonicalQueries.addAll(listOf("sister", "didi", "behen"))
+            query.contains("sis") || query.contains("sister") || query.contains("didi") ||
+            query.contains("বোন") || query.contains("দিদি") || query.contains("আপু") -> {
+                canonicalQueries.addAll(listOf("sister", "didi", "behen", "বোন", "দিদি", "আপু"))
             }
         }
 

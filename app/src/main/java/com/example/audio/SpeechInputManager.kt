@@ -23,6 +23,12 @@ class SpeechInputManager(
     private val _partialText = MutableStateFlow("")
     val partialText: StateFlow<String> = _partialText.asStateFlow()
 
+    private var preferredLanguageTag: String = "bn-BD"
+
+    fun setPreferredLanguage(tag: String) {
+        preferredLanguageTag = tag
+    }
+
     fun startListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             return
@@ -73,8 +79,8 @@ class SpeechInputManager(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
-            putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("hi-IN", "en-IN", "mr-IN", "bn-IN"))
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, preferredLanguageTag)
+            putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("bn-BD", "bn-IN", "hi-IN", "en-IN", "en-US"))
         }
 
         try {

@@ -61,5 +61,11 @@ class ExampleRobolectricTest {
     val urlJson = JSONObject(urlJsonStr)
     assertEquals("openUrl", urlJson.getString("action"))
     assertTrue(urlJson.getBoolean("success"))
+
+    // Test Bengali numerals calling (01890260664 / ০১৮৯০২৬০৬৬৪)
+    val bengaliCallJsonStr = bridge.makeCall("০১৮৯০২৬০৬৬৪")
+    val bengaliCallJson = JSONObject(bengaliCallJsonStr)
+    assertEquals("makeCall", bengaliCallJson.getString("action"))
+    assertEquals("01890260664", bengaliCallJson.getString("phoneNumber"))
   }
 }

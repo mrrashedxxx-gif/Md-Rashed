@@ -207,7 +207,13 @@ class ArushiAudioManager(private val context: Context) {
 
         val detectedLocale = detectLocaleFromText(text)
         try {
-            textToSpeech?.language = detectedLocale
+            val result = textToSpeech?.setLanguage(detectedLocale)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                // If bn-BD not available, try bn-IN or default
+                if (detectedLocale.language == "bn") {
+                    textToSpeech?.setLanguage(Locale.forLanguageTag("bn-IN"))
+                }
+            }
         } catch (e: Exception) {
             textToSpeech?.language = Locale.ENGLISH
         }
@@ -227,6 +233,14 @@ class ArushiAudioManager(private val context: Context) {
      * Detects language from script and keywords to match speech naturally.
      */
     private fun detectLocaleFromText(text: String): Locale {
+        // 1. Check for Bengali script
+        for (char in text) {
+            val block = Character.UnicodeBlock.of(char)
+            if (block == Character.UnicodeBlock.BENGALI) {
+                return Locale.forLanguageTag("bn-BD")
+            }
+        }
+
         // Check for Devanagari script (Hindi, Marathi)
         for (char in text) {
             val block = Character.UnicodeBlock.of(char)
@@ -236,9 +250,6 @@ class ArushiAudioManager(private val context: Context) {
                     return Locale.forLanguageTag("mr-IN")
                 }
                 return Locale.forLanguageTag("hi-IN")
-            }
-            if (block == Character.UnicodeBlock.BENGALI) {
-                return Locale.forLanguageTag("bn-IN")
             }
             if (block == Character.UnicodeBlock.TAMIL) {
                 return Locale.forLanguageTag("ta-IN")
@@ -263,9 +274,17 @@ class ArushiAudioManager(private val context: Context) {
             }
         }
 
+        val lower = text.lowercase()
+
+        // Banglish checks
+        val banglishKeywords = listOf("koro", "korun", "kholo", "bolo", "bolun", "kotha", "kemon", "achho", "achen", "amar", "amake", "apni", "tumi", "hobe", "bangla", "shunte")
+        val banglaMatchCount = banglishKeywords.count { lower.contains(it) }
+        if (banglaMatchCount >= 2 || lower.contains("bangla") || lower.contains("banglay")) {
+            return Locale.forLanguageTag("bn-BD")
+        }
+
         // Hinglish checks
         val hinglishKeywords = listOf("kholo", "karo", "karti", "hoon", "nahi", "aap", "tum", "kaise", "batao", "sunao", "chalo", "lagao", "kya", "hai")
-        val lower = text.lowercase()
         val matchCount = hinglishKeywords.count { lower.contains(it) }
         if (matchCount >= 2) {
             return Locale.forLanguageTag("hi-IN")

@@ -62,6 +62,20 @@ class ArushiViewModel(application: Application) : AndroidViewModel(application) 
         voiceEngine.interruptSpeech()
     }
 
+    fun setLanguage(lang: String) {
+        val tag = when {
+            lang.contains("Bengali") || lang.contains("বাংলা") -> "bn-BD"
+            lang.contains("Hindi") || lang.contains("हिंदी") -> "hi-IN"
+            else -> "en-IN"
+        }
+        speechInputManager.setPreferredLanguage(tag)
+        voiceEngine.setLanguage(lang)
+    }
+
+    fun callDirectNumber(number: String = "01890260664") {
+        sendQuery("$number নম্বরে কল করো")
+    }
+
     fun sendQuery(text: String) {
         if (text.isBlank()) return
         speechInputManager.stopListening()

@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,16 +36,22 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -107,6 +114,7 @@ fun ArushiScreen(
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var inputText by remember { mutableStateOf("") }
+    var showLanguageMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     // Permissions State
@@ -204,20 +212,61 @@ fun ArushiScreen(
                 }
             }
 
-            // Language pill
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(ArushiCardDark)
-                    .border(1.dp, ArushiBorderDark, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
-            ) {
-                Text(
-                    text = currentLanguage,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = ArushiSecondary
-                )
+            // Language pill with interactive selection
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(ArushiCardDark)
+                        .border(1.dp, ArushiSecondary.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+                        .clickable { showLanguageMenu = true }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = "Change Language",
+                        tint = ArushiSecondary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = currentLanguage,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ArushiSecondary
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showLanguageMenu,
+                    onDismissRequest = { showLanguageMenu = false },
+                    modifier = Modifier
+                        .background(ArushiCardDark)
+                        .border(1.dp, ArushiBorderDark, RoundedCornerShape(8.dp))
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("বাংলা (Bengali)", color = ArushiTextPrimaryDark, fontSize = 12.sp) },
+                        onClick = {
+                            viewModel.setLanguage("বাংলা (Bengali)")
+                            showLanguageMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("English", color = ArushiTextPrimaryDark, fontSize = 12.sp) },
+                        onClick = {
+                            viewModel.setLanguage("English")
+                            showLanguageMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("हिंदी (Hindi)", color = ArushiTextPrimaryDark, fontSize = 12.sp) },
+                        onClick = {
+                            viewModel.setLanguage("Hindi")
+                            showLanguageMenu = false
+                        }
+                    )
+                }
             }
         }
 
@@ -359,25 +408,92 @@ fun ArushiScreen(
                     }
                 }
 
-                // Quick Action Voice Suggestion Chips (Covering all specification test cases)
+                // Quick Contact Dial Banner (User specified number: 01890260664)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = ArushiCardDark,
+                    border = BorderStroke(1.dp, ArushiSecondary.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 4.dp)
+                        .clickable {
+                            if (!hasCallPermission) {
+                                permissionLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
+                            }
+                            viewModel.callDirectNumber("01890260664")
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(ArushiSecondary.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Quick Call",
+                                    tint = ArushiSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "দ্রুত ডায়াল: ০১৮৯০২৬০৬৬৪ (01890260664)",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ArushiTextPrimaryDark
+                                )
+                                Text(
+                                    text = "ট্যাপ করুন অথবা বলুন '০১৮৯০২৬০৬৬৪ নম্বরে কল করো'",
+                                    fontSize = 10.sp,
+                                    color = ArushiTextSecondaryDark
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(ArushiPrimary)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "কল করুন",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+
+                // Quick Action Voice Suggestion Chips (Covering Bengali, Hindi, English and Phone number)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 6.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val promptChips = listOf(
+                        "০১৮৯০২৬০৬৬৪ এ কল করো",
+                        "হোয়াটসঅ্যাপ খোলো",
+                        "ইউটিউব খোলো",
+                        "কেমন আছো?",
+                        "বাংলায় কথা বলো",
+                        "Call 01890260664",
                         "WhatsApp kholo",
                         "Open YouTube",
                         "Call Mom",
-                        "Call Rahul",
-                        "Call 9876543210",
                         "Hindi mein baat karo",
-                        "Talk to me in English",
-                        "Hinglish mein baat karo",
-                        "Open Instagram",
-                        "Open settings"
+                        "Talk in English"
                     )
 
                     items(promptChips) { chip ->
@@ -459,7 +575,7 @@ fun ArushiScreen(
                             onValueChange = { inputText = it },
                             placeholder = {
                                 Text(
-                                    "Ask Arushi or try 'WhatsApp kholo'...",
+                                    "বলুন বা লিখুন (যেমন: '০১৮৯০২৬০৬৬৪ কল করো')...",
                                     fontSize = 12.sp,
                                     color = ArushiTextSecondaryDark
                                 )

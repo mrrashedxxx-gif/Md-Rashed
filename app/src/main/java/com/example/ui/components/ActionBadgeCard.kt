@@ -18,7 +18,9 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +44,8 @@ fun ActionBadgeCard(
     modifier: Modifier = Modifier
 ) {
     val (icon, label) = when {
+        actionName.contains("lockPhone", ignoreCase = true) -> Icons.Default.Lock to "Phone Lock Action"
+        actionName.contains("permission", ignoreCase = true) -> Icons.Default.Security to "Permission Check / Request"
         actionName.contains("openWhatsApp", ignoreCase = true) -> Icons.AutoMirrored.Filled.Send to "WhatsApp Action"
         actionName.contains("makeCall", ignoreCase = true) -> Icons.Default.Call to "Phone Call Action"
         actionName.contains("callContact", ignoreCase = true) -> Icons.Default.Call to "Contact Lookup & Call"
@@ -96,7 +100,7 @@ fun ActionBadgeCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = if (success) "Executed" else "Status",
+                    text = if (success) "Executed" else "Notice",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium,
                     color = badgeColor

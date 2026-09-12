@@ -21,51 +21,70 @@ class ExampleRobolectricTest {
   fun `read app name from context`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
-    assertEquals("Arushi", appName)
+    assertEquals("MrRobot", appName)
   }
 
   @Test
-  fun `verify android action bridge methods`() {
+  fun `verify all 9 android action bridge methods`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val controller = AndroidDeviceController(context)
     val bridge = AndroidActionBridge(controller)
 
     assertTrue(bridge.isNativeBridge())
 
-    // Test openApp bridge execution
-    val appJsonStr = bridge.openApp("Settings")
-    val appJson = JSONObject(appJsonStr)
-    assertEquals("openApp", appJson.getString("action"))
-    assertNotNull(appJson.getString("message"))
-
-    // Test makeCall bridge execution
-    val callJsonStr = bridge.makeCall("9876543210")
-    val callJson = JSONObject(callJsonStr)
-    assertEquals("makeCall", callJson.getString("action"))
-    assertEquals("9876543210", callJson.getString("phoneNumber"))
-
-    // Test callContact bridge execution
-    val contactJsonStr = bridge.callContact("Mom")
-    val contactJson = JSONObject(contactJsonStr)
-    assertEquals("callContact", contactJson.getString("action"))
-    assertEquals("Mom", contactJson.getString("contactName"))
-
-    // Test openWhatsApp bridge execution
+    // 1. openWhatsApp
     val waJsonStr = bridge.openWhatsApp()
     val waJson = JSONObject(waJsonStr)
     assertEquals("openWhatsApp", waJson.getString("action"))
     assertNotNull(waJson.getString("message"))
 
-    // Test openUrl bridge execution
+    // 2. openApp
+    val appJsonStr = bridge.openApp("Settings")
+    val appJson = JSONObject(appJsonStr)
+    assertEquals("openApp", appJson.getString("action"))
+    assertNotNull(appJson.getString("message"))
+
+    // 3. openUrl
     val urlJsonStr = bridge.openUrl("https://www.google.com")
     val urlJson = JSONObject(urlJsonStr)
     assertEquals("openUrl", urlJson.getString("action"))
     assertTrue(urlJson.getBoolean("success"))
 
-    // Test Bengali numerals calling (01890260664 / ০১৮৯০২৬০৬৬৪)
+    // 4. makeCall & Bengali numerals normalization
+    val callJsonStr = bridge.makeCall("9876543210")
+    val callJson = JSONObject(callJsonStr)
+    assertEquals("makeCall", callJson.getString("action"))
+    assertEquals("9876543210", callJson.getString("phoneNumber"))
+
     val bengaliCallJsonStr = bridge.makeCall("০১৮৯০২৬০৬৬৪")
     val bengaliCallJson = JSONObject(bengaliCallJsonStr)
     assertEquals("makeCall", bengaliCallJson.getString("action"))
     assertEquals("01890260664", bengaliCallJson.getString("phoneNumber"))
+
+    // 5. callContact
+    val contactJsonStr = bridge.callContact("Mom")
+    val contactJson = JSONObject(contactJsonStr)
+    assertEquals("callContact", contactJson.getString("action"))
+    assertEquals("Mom", contactJson.getString("contactName"))
+
+    // 6. checkPermission
+    val micGranted = bridge.checkPermission("microphone")
+    // Should return boolean without crashing
+
+    // 7. requestPermission
+    val reqPermStr = bridge.requestPermission("microphone")
+    val reqPermJson = JSONObject(reqPermStr)
+    assertEquals("requestPermission", reqPermJson.getString("action"))
+    assertEquals("microphone", reqPermJson.getString("permissionName"))
+
+    // 8. getPermissionStatus
+    val status = bridge.getPermissionStatus("microphone")
+    assertTrue(status in listOf("GRANTED", "DENIED", "NOT_REQUESTED"))
+
+    // 9. lockPhone
+    val lockJsonStr = bridge.lockPhone()
+    val lockJson = JSONObject(lockJsonStr)
+    assertEquals("lockPhone", lockJson.getString("action"))
+    assertNotNull(lockJson.getString("status"))
   }
 }

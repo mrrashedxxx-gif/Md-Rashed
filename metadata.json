@@ -1,6 +1,6 @@
 {
-  "name": "Arushi",
-  "description": "Multilingual AI voice assistant with native Android app actions, voice calling, and WhatsApp integration.",
+  "name": "MrRobot",
+  "description": "MrRobot - Advanced multilingual personal AI voice assistant with native Android app actions, voice calling, contacts lookup, phone locking, and WhatsApp integration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

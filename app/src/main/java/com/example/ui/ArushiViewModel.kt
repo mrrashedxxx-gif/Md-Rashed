@@ -33,12 +33,25 @@ class ArushiViewModel(application: Application) : AndroidViewModel(application) 
     private val _bridgeLogs = MutableStateFlow<List<BridgeLogEntry>>(emptyList())
     val bridgeLogs: StateFlow<List<BridgeLogEntry>> = _bridgeLogs.asStateFlow()
 
+    private val _permissionToRequest = MutableStateFlow<String?>(null)
+    val permissionToRequest: StateFlow<String?> = _permissionToRequest.asStateFlow()
+
     val actionBridge = AndroidActionBridge(deviceController) { fn, res ->
         addBridgeLog(fn, res)
     }
 
     private val speechInputManager = SpeechInputManager(context) { recognizedText ->
         sendQuery(recognizedText)
+    }
+
+    init {
+        deviceController.onPermissionRequestNeeded = { perm ->
+            _permissionToRequest.value = perm
+        }
+    }
+
+    fun clearPermissionRequest() {
+        _permissionToRequest.value = null
     }
 
     val messages: StateFlow<List<ChatMessage>> = voiceEngine.messages
@@ -52,7 +65,7 @@ class ArushiViewModel(application: Application) : AndroidViewModel(application) 
         if (isListening.value) {
             speechInputManager.stopListening()
         } else {
-            // Stop any ongoing speech first (Test case 10)
+            // Barge-in: Stop any ongoing speech first (Section 23)
             voiceEngine.interruptSpeech()
             speechInputManager.startListening()
         }
@@ -92,6 +105,10 @@ class ArushiViewModel(application: Application) : AndroidViewModel(application) 
                 "makeCall" -> actionBridge.makeCall(param)
                 "callContact" -> actionBridge.callContact(param)
                 "openUrl" -> actionBridge.openUrl(param)
+                "lockPhone" -> actionBridge.lockPhone()
+                "checkPermission" -> actionBridge.checkPermission(param)
+                "requestPermission" -> actionBridge.requestPermission(param)
+                "getPermissionStatus" -> actionBridge.getPermissionStatus(param)
             }
         }
     }

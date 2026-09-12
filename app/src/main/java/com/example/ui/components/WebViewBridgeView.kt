@@ -1,7 +1,6 @@
 package com.example.ui.components
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Bitmap
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -71,7 +70,6 @@ fun WebViewBridgeView(
     bridgeLogs: List<BridgeLogEntry>,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
     var currentMode by remember { mutableStateOf("tester") } // "tester" or "remote"
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -106,7 +104,7 @@ fun WebViewBridgeView(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Native Android Action Bridge",
+                            text = "MrRobot Native Android Bridge",
                             fontWeight = FontWeight.Bold,
                             color = ArushiTextPrimaryDark,
                             fontSize = 14.sp
@@ -120,7 +118,7 @@ fun WebViewBridgeView(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "CONNECTED (Active)",
+                            text = "CONNECTED",
                             color = ArushiSuccess,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -130,7 +128,7 @@ fun WebViewBridgeView(
 
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "window.AndroidBridge & window.arushiNative are registered with openWhatsApp(), openApp(), makeCall(), callContact(), and openUrl().",
+                    text = "window.AndroidBridge & window.MrRobotBridge provide all 9 functions: openWhatsApp(), openApp(), openUrl(), makeCall(), callContact(), checkPermission(), requestPermission(), getPermissionStatus(), lockPhone().",
                     color = ArushiTextSecondaryDark,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
@@ -208,13 +206,13 @@ fun WebViewBridgeView(
                         settings.mediaPlaybackRequiresUserGesture = false
                         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
-                        // Register both requested names for the native bridge
+                        // Register bridge objects
                         addJavascriptInterface(actionBridge, "AndroidBridge")
+                        addJavascriptInterface(actionBridge, "MrRobotBridge")
                         addJavascriptInterface(actionBridge, "arushiNative")
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onPermissionRequest(request: PermissionRequest?) {
-                                // Automatically grant microphone access to web app for Gemini Live
                                 request?.grant(request.resources)
                             }
                         }
@@ -235,7 +233,6 @@ fun WebViewBridgeView(
                             }
                         }
 
-                        // Load default tester
                         loadDataWithBaseURL(null, getInteractiveTesterHtml(), "text/html", "UTF-8", null)
                         webViewInstance = this
                     }
@@ -264,7 +261,7 @@ fun WebViewBridgeView(
         ) {
             if (bridgeLogs.isEmpty()) {
                 Text(
-                    text = "No bridge calls executed yet. Click buttons above or talk to Arushi.",
+                    text = "No bridge calls executed yet. Click buttons above or speak with MrRobot.",
                     fontSize = 10.sp,
                     color = Color.Gray,
                     fontFamily = FontFamily.Monospace
@@ -295,40 +292,42 @@ private fun getInteractiveTesterHtml(): String {
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0E0B1A; color: #EEE; padding: 14px; margin: 0; }
-            h2 { color: #A78BFA; margin-top: 0; font-size: 17px; }
-            p { font-size: 12px; color: #9CA3AF; line-height: 1.4; margin-bottom: 12px; }
-            .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0E0B1A; color: #EEE; padding: 12px; margin: 0; }
+            h2 { color: #A78BFA; margin-top: 0; font-size: 16px; }
+            p { font-size: 11px; color: #9CA3AF; line-height: 1.4; margin-bottom: 10px; }
+            .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
             button {
               background: #231B42; color: #F3F4F6; border: 1px solid #4C3A82;
-              border-radius: 8px; padding: 10px 8px; font-size: 11px; font-weight: 600;
+              border-radius: 8px; padding: 8px 6px; font-size: 11px; font-weight: 600;
               cursor: pointer; text-align: left; transition: 0.2s;
             }
             button:active { background: #6D28D9; border-color: #A78BFA; }
-            .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; margin-bottom: 4px; font-weight: bold; }
+            .badge { display: inline-block; padding: 2px 5px; border-radius: 4px; font-size: 8px; margin-bottom: 3px; font-weight: bold; }
             .b-wa { background: #059669; color: #FFF; }
             .b-call { background: #2563EB; color: #FFF; }
             .b-app { background: #7C3AED; color: #FFF; }
             .b-web { background: #D97706; color: #FFF; }
+            .b-lock { background: #DC2626; color: #FFF; }
+            .b-sec { background: #0891B2; color: #FFF; }
             #console {
               background: #05040A; border: 1px solid #231B42; border-radius: 8px;
-              padding: 10px; font-family: monospace; font-size: 10px; color: #34D399;
-              min-height: 70px; max-height: 120px; overflow-y: auto; word-break: break-all;
+              padding: 8px; font-family: monospace; font-size: 10px; color: #34D399;
+              min-height: 70px; max-height: 110px; overflow-y: auto; word-break: break-all;
             }
           </style>
         </head>
         <body>
-          <h2>Native Bridge Interactive Console</h2>
-          <p>This web container is executing inside Android. It detects <code>window.AndroidBridge</code> and triggers native Android actions directly.</p>
+          <h2>MrRobot Native Bridge Console</h2>
+          <p>Exposes all 9 safe predefined functions to <code>window.AndroidBridge</code> & <code>window.MrRobotBridge</code>.</p>
           
           <div class="btn-grid">
             <button onclick="callNative('openWhatsApp')">
               <span class="badge b-wa">WhatsApp</span><br>
               openWhatsApp()
             </button>
-            <button onclick="callNative('makeCall', '9876543210')">
+            <button onclick="callNative('makeCall', '01890260664')">
               <span class="badge b-call">Phone</span><br>
-              makeCall('9876543210')
+              makeCall('01890260664')
             </button>
             <button onclick="callNative('callContact', 'Mom')">
               <span class="badge b-call">Contact</span><br>
@@ -354,9 +353,21 @@ private fun getInteractiveTesterHtml(): String {
               <span class="badge b-web">Browser</span><br>
               openUrl('google.com')
             </button>
+            <button onclick="callNative('checkPermission', 'microphone')">
+              <span class="badge b-sec">Permission</span><br>
+              checkPermission('mic')
+            </button>
+            <button onclick="callNative('requestPermission', 'contacts')">
+              <span class="badge b-sec">Permission</span><br>
+              requestPermission('contacts')
+            </button>
+            <button onclick="callNative('lockPhone')">
+              <span class="badge b-lock">Security</span><br>
+              lockPhone()
+            </button>
           </div>
           
-          <div id="console">> Bridge initialized. Click any action above to test.</div>
+          <div id="console">> MrRobot bridge ready. Click any function to execute natively.</div>
           
           <script>
             function log(msg) {
@@ -365,9 +376,9 @@ private fun getInteractiveTesterHtml(): String {
             }
             
             function callNative(fn, arg) {
-              var bridge = window.AndroidBridge || window.arushiNative;
+              var bridge = window.MrRobotBridge || window.AndroidBridge || window.arushiNative;
               if (!bridge) {
-                log('ERROR: window.AndroidBridge is not detected!');
+                log('ERROR: Native bridge not detected!');
                 return;
               }
               try {
@@ -377,6 +388,10 @@ private fun getInteractiveTesterHtml(): String {
                 else if (fn === 'callContact') res = bridge.callContact(arg);
                 else if (fn === 'openApp') res = bridge.openApp(arg);
                 else if (fn === 'openUrl') res = bridge.openUrl(arg);
+                else if (fn === 'lockPhone') res = bridge.lockPhone();
+                else if (fn === 'checkPermission') res = bridge.checkPermission(arg);
+                else if (fn === 'requestPermission') res = bridge.requestPermission(arg);
+                else if (fn === 'getPermissionStatus') res = bridge.getPermissionStatus(arg);
                 log('Executed ' + fn + '(' + (arg || '') + ') -> ' + res);
               } catch(e) {
                 log('Exception in ' + fn + ': ' + e.message);

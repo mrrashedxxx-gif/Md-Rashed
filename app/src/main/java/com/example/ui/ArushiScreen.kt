@@ -36,10 +36,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Phone
@@ -111,6 +111,7 @@ fun ArushiScreen(
     val isPlayingVoice by viewModel.isPlayingVoice.collectAsState()
     val partialSpeech by viewModel.partialSpeech.collectAsState()
     val bridgeLogs by viewModel.bridgeLogs.collectAsState()
+    val permissionToRequest by viewModel.permissionToRequest.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var inputText by remember { mutableStateOf("") }
@@ -140,6 +141,14 @@ fun ArushiScreen(
         hasAudioPermission = perms[Manifest.permission.RECORD_AUDIO] ?: hasAudioPermission
         hasContactsPermission = perms[Manifest.permission.READ_CONTACTS] ?: hasContactsPermission
         hasCallPermission = perms[Manifest.permission.CALL_PHONE] ?: hasCallPermission
+    }
+
+    // Handle incoming permission request events from AI or Bridge
+    LaunchedEffect(permissionToRequest) {
+        permissionToRequest?.let { perm ->
+            permissionLauncher.launch(arrayOf(perm))
+            viewModel.clearPermissionRequest()
+        }
     }
 
     // Auto scroll when new message arrives
@@ -173,7 +182,7 @@ fun ArushiScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.img_app_icon_1789231948672),
-                        contentDescription = "Arushi AI Avatar",
+                        contentDescription = "MrRobot AI Avatar",
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -183,7 +192,7 @@ fun ArushiScreen(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Arushi",
+                            text = "MrRobot",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = ArushiTextPrimaryDark
@@ -205,7 +214,7 @@ fun ArushiScreen(
                     }
 
                     Text(
-                        text = "Multilingual Voice Assistant",
+                        text = "Multilingual AI Voice Assistant",
                         fontSize = 11.sp,
                         color = ArushiTextSecondaryDark
                     )
@@ -263,6 +272,13 @@ fun ArushiScreen(
                         text = { Text("हिंदी (Hindi)", color = ArushiTextPrimaryDark, fontSize = 12.sp) },
                         onClick = {
                             viewModel.setLanguage("Hindi")
+                            showLanguageMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Hinglish", color = ArushiTextPrimaryDark, fontSize = 12.sp) },
+                        onClick = {
+                            viewModel.setLanguage("Hinglish")
                             showLanguageMenu = false
                         }
                     )
@@ -392,7 +408,7 @@ fun ArushiScreen(
 
                         val statusLabel = when {
                             isListening -> if (partialSpeech.isNotBlank()) "\"$partialSpeech\"" else "Listening to your voice..."
-                            isPlayingVoice || status == AssistantStatus.SPEAKING -> "Arushi is speaking..."
+                            isPlayingVoice || status == AssistantStatus.SPEAKING -> "MrRobot is speaking..."
                             status == AssistantStatus.THINKING -> "Understanding & executing action..."
                             else -> "Tap the microphone or say a command"
                         }
@@ -408,68 +424,105 @@ fun ArushiScreen(
                     }
                 }
 
-                // Quick Contact Dial Banner (User specified number: 01890260664)
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = ArushiCardDark,
-                    border = BorderStroke(1.dp, ArushiSecondary.copy(alpha = 0.4f)),
+                // Quick Action Cards (Direct Dial & Phone Lock)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 4.dp)
-                        .clickable {
-                            if (!hasCallPermission) {
-                                permissionLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
-                            }
-                            viewModel.callDirectNumber("01890260664")
-                        }
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    // Quick Call Card
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = ArushiCardDark,
+                        border = BorderStroke(1.dp, ArushiSecondary.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .clickable {
+                                if (!hasCallPermission) {
+                                    permissionLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
+                                }
+                                viewModel.callDirectNumber("01890260664")
+                            }
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Box(
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(ArushiSecondary.copy(alpha = 0.2f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Phone,
-                                    contentDescription = "Quick Call",
+                                    contentDescription = "Call",
                                     tint = ArushiSecondary,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = "দ্রুত ডায়াল: ০১৮৯০২৬০৬৬৪ (01890260664)",
-                                    fontSize = 12.sp,
+                                    text = "01890260664",
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = ArushiTextPrimaryDark
                                 )
                                 Text(
-                                    text = "ট্যাপ করুন অথবা বলুন '০১৮৯০২৬০৬৬৪ নম্বরে কল করো'",
+                                    text = "দ্রুত ডায়াল",
                                     fontSize = 10.sp,
                                     color = ArushiTextSecondaryDark
                                 )
                             }
                         }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(ArushiPrimary)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                    }
+
+                    // Quick Lock Card
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = ArushiCardDark,
+                        border = BorderStroke(1.dp, ArushiTertiary.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                viewModel.sendQuery("ফোন লক করো")
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "কল করুন",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(ArushiTertiary.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Lock",
+                                    tint = ArushiTertiary,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Lock Phone",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ArushiTextPrimaryDark
+                                )
+                                Text(
+                                    text = "লক করো",
+                                    fontSize = 10.sp,
+                                    color = ArushiTextSecondaryDark
+                                )
+                            }
                         }
                     }
                 }
@@ -478,22 +531,22 @@ fun ArushiScreen(
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = 4.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val promptChips = listOf(
                         "০১৮৯০২৬০৬৬৪ এ কল করো",
-                        "হোয়াটসঅ্যাপ খোলো",
-                        "ইউটিউব খোলো",
-                        "কেমন আছো?",
-                        "বাংলায় কথা বলো",
-                        "Call 01890260664",
-                        "WhatsApp kholo",
-                        "Open YouTube",
+                        "WhatsApp খোলো",
+                        "ফোন লক করো",
+                        "Lock my phone",
                         "Call Mom",
+                        "Open YouTube",
+                        "Microphone permission আছে?",
+                        "বাংলায় কথা বলো",
                         "Hindi mein baat karo",
-                        "Talk in English"
+                        "Talk in English",
+                        "Hello MrRobot"
                     )
 
                     items(promptChips) { chip ->
@@ -542,7 +595,7 @@ fun ArushiScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Quick Interrupt Button (Active whenever Arushi is speaking - Test Case 10)
+                        // Quick Interrupt Button (Barge-in: Active whenever speaking)
                         AnimatedVisibility(
                             visible = isPlayingVoice || status == AssistantStatus.SPEAKING,
                             enter = fadeIn(),
@@ -559,7 +612,7 @@ fun ArushiScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Stop,
-                                    contentDescription = "Interrupt Arushi Speech",
+                                    contentDescription = "Interrupt MrRobot Speech",
                                     tint = ArushiError
                                 )
                             }
@@ -575,7 +628,7 @@ fun ArushiScreen(
                             onValueChange = { inputText = it },
                             placeholder = {
                                 Text(
-                                    "বলুন বা লিখুন (যেমন: '০১৮৯০২৬০৬৬৪ কল করো')...",
+                                    "বলুন বা লিখুন (যেমন: 'WhatsApp খোলো')...",
                                     fontSize = 12.sp,
                                     color = ArushiTextSecondaryDark
                                 )
@@ -688,7 +741,7 @@ fun ChatMessageItem(message: ChatMessage) {
         ) {
             Column {
                 Text(
-                    text = if (isUser) "You" else "Arushi",
+                    text = if (isUser) "You" else "MrRobot",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isUser) ArushiSecondary else ArushiSecondary.copy(alpha = 0.8f)

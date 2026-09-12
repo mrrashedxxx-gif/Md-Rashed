@@ -1,0 +1,600 @@
+package com.example.ui
+
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.example.R
+import com.example.ai.AssistantStatus
+import com.example.ai.ChatMessage
+import com.example.ai.MessageSender
+import com.example.ui.components.ActionBadgeCard
+import com.example.ui.components.VoiceOrb
+import com.example.ui.components.WebViewBridgeView
+import com.example.ui.theme.ArushiBackgroundDark
+import com.example.ui.theme.ArushiBorderDark
+import com.example.ui.theme.ArushiCardDark
+import com.example.ui.theme.ArushiError
+import com.example.ui.theme.ArushiPrimary
+import com.example.ui.theme.ArushiPrimaryDark
+import com.example.ui.theme.ArushiSecondary
+import com.example.ui.theme.ArushiSurfaceDark
+import com.example.ui.theme.ArushiTertiary
+import com.example.ui.theme.ArushiTextPrimaryDark
+import com.example.ui.theme.ArushiTextSecondaryDark
+
+@Composable
+fun ArushiScreen(
+    viewModel: ArushiViewModel,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val messages by viewModel.messages.collectAsState()
+    val status by viewModel.status.collectAsState()
+    val currentLanguage by viewModel.currentLanguage.collectAsState()
+    val isListening by viewModel.isListening.collectAsState()
+    val isPlayingVoice by viewModel.isPlayingVoice.collectAsState()
+    val partialSpeech by viewModel.partialSpeech.collectAsState()
+    val bridgeLogs by viewModel.bridgeLogs.collectAsState()
+
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var inputText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+
+    // Permissions State
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasContactsPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasCallPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        hasAudioPermission = perms[Manifest.permission.RECORD_AUDIO] ?: hasAudioPermission
+        hasContactsPermission = perms[Manifest.permission.READ_CONTACTS] ?: hasContactsPermission
+        hasCallPermission = perms[Manifest.permission.CALL_PHONE] ?: hasCallPermission
+    }
+
+    // Auto scroll when new message arrives
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(ArushiBackgroundDark)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+    ) {
+        // App Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, ArushiSecondary, CircleShape)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_app_icon_1789231948672),
+                        contentDescription = "Arushi AI Avatar",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Arushi",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ArushiTextPrimaryDark
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(ArushiPrimary.copy(alpha = 0.3f))
+                                .padding(horizontal = 5.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "LIVE AI",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ArushiSecondary
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Multilingual Voice Assistant",
+                        fontSize = 11.sp,
+                        color = ArushiTextSecondaryDark
+                    )
+                }
+            }
+
+            // Language pill
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(ArushiCardDark)
+                    .border(1.dp, ArushiBorderDark, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = currentLanguage,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = ArushiSecondary
+                )
+            }
+        }
+
+        // Navigation Tabs (Voice Assistant vs Android Bridge / Web)
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = ArushiBackgroundDark,
+            contentColor = ArushiSecondary,
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    color = ArushiSecondary
+                )
+            }
+        ) {
+            Tab(
+                selected = selectedTabIndex == 0,
+                onClick = { selectedTabIndex = 0 },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Voice Assistant", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            )
+            Tab(
+                selected = selectedTabIndex == 1,
+                onClick = { selectedTabIndex = 1 },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Android Bridge & Web", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            )
+        }
+
+        // Permission Banner (if needed)
+        if (!hasAudioPermission || !hasContactsPermission || !hasCallPermission) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(ArushiCardDark)
+                    .border(1.dp, ArushiTertiary.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                    .clickable {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.RECORD_AUDIO,
+                                Manifest.permission.READ_CONTACTS,
+                                Manifest.permission.CALL_PHONE
+                            )
+                        )
+                    }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = ArushiTertiary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Grant Mic, Contacts & Phone permissions",
+                            fontSize = 11.sp,
+                            color = ArushiTextPrimaryDark
+                        )
+                    }
+                    Text(
+                        text = "Enable",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ArushiSecondary
+                    )
+                }
+            }
+        }
+
+        if (selectedTabIndex == 1) {
+            // View Android Action Bridge & WebView
+            WebViewBridgeView(
+                actionBridge = viewModel.actionBridge,
+                bridgeLogs = bridgeLogs,
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            // Main Voice Assistant Screen
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                // Interactive Voice Orb Area
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        VoiceOrb(
+                            status = when {
+                                isListening -> AssistantStatus.LISTENING
+                                isPlayingVoice -> AssistantStatus.SPEAKING
+                                else -> status
+                            },
+                            size = 90.dp
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        val statusLabel = when {
+                            isListening -> if (partialSpeech.isNotBlank()) "\"$partialSpeech\"" else "Listening to your voice..."
+                            isPlayingVoice || status == AssistantStatus.SPEAKING -> "Arushi is speaking..."
+                            status == AssistantStatus.THINKING -> "Understanding & executing action..."
+                            else -> "Tap the microphone or say a command"
+                        }
+
+                        Text(
+                            text = statusLabel,
+                            fontSize = 12.sp,
+                            color = if (isListening) ArushiSecondary else ArushiTextSecondaryDark,
+                            fontWeight = if (isListening) FontWeight.SemiBold else FontWeight.Normal,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
+                }
+
+                // Quick Action Voice Suggestion Chips (Covering all specification test cases)
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val promptChips = listOf(
+                        "WhatsApp kholo",
+                        "Open YouTube",
+                        "Call Mom",
+                        "Call Rahul",
+                        "Call 9876543210",
+                        "Hindi mein baat karo",
+                        "Talk to me in English",
+                        "Hinglish mein baat karo",
+                        "Open Instagram",
+                        "Open settings"
+                    )
+
+                    items(promptChips) { chip ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(ArushiCardDark)
+                                .border(1.dp, ArushiBorderDark, RoundedCornerShape(16.dp))
+                                .clickable {
+                                    viewModel.sendQuery(chip)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = chip,
+                                fontSize = 11.sp,
+                                color = ArushiTextPrimaryDark
+                            )
+                        }
+                    }
+                }
+
+                // Conversation Message List
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(messages, key = { it.id }) { msg ->
+                        ChatMessageItem(message = msg)
+                    }
+                }
+
+                // Bottom Voice Control Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ArushiSurfaceDark)
+                        .border(1.dp, ArushiBorderDark)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Quick Interrupt Button (Active whenever Arushi is speaking - Test Case 10)
+                        AnimatedVisibility(
+                            visible = isPlayingVoice || status == AssistantStatus.SPEAKING,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.interruptSpeech() },
+                                modifier = Modifier
+                                    .testTag("interrupt_button")
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(ArushiError.copy(alpha = 0.2f))
+                                    .border(1.dp, ArushiError, CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Stop,
+                                    contentDescription = "Interrupt Arushi Speech",
+                                    tint = ArushiError
+                                )
+                            }
+                        }
+
+                        if (isPlayingVoice || status == AssistantStatus.SPEAKING) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        // Text Field for typing/testing queries
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            placeholder = {
+                                Text(
+                                    "Ask Arushi or try 'WhatsApp kholo'...",
+                                    fontSize = 12.sp,
+                                    color = ArushiTextSecondaryDark
+                                )
+                            },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = ArushiSecondary,
+                                unfocusedBorderColor = ArushiBorderDark,
+                                focusedTextColor = ArushiTextPrimaryDark,
+                                unfocusedTextColor = ArushiTextPrimaryDark,
+                                focusedContainerColor = ArushiCardDark,
+                                unfocusedContainerColor = ArushiCardDark
+                            ),
+                            shape = RoundedCornerShape(24.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendQuery(inputText)
+                                    inputText = ""
+                                }
+                            }),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("query_input")
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Send or Mic Button
+                        if (inputText.isNotBlank()) {
+                            IconButton(
+                                onClick = {
+                                    viewModel.sendQuery(inputText)
+                                    inputText = ""
+                                },
+                                modifier = Modifier
+                                    .testTag("send_button")
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(ArushiPrimary)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Send Query",
+                                    tint = Color.White
+                                )
+                            }
+                        } else {
+                            // Primary Mic Button
+                            val micBg = if (isListening) ArushiTertiary else ArushiPrimary
+                            IconButton(
+                                onClick = {
+                                    if (!hasAudioPermission) {
+                                        permissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+                                    } else {
+                                        viewModel.toggleListening()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .testTag("mic_button")
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(micBg)
+                            ) {
+                                Icon(
+                                    imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
+                                    contentDescription = if (isListening) "Stop Listening" else "Start Voice Input",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatMessageItem(message: ChatMessage) {
+    val isUser = message.sender == MessageSender.USER
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (isUser) 16.dp else 4.dp,
+                        bottomEnd = if (isUser) 4.dp else 16.dp
+                    )
+                )
+                .background(
+                    if (isUser) {
+                        Brush.horizontalGradient(listOf(ArushiPrimaryDark, ArushiPrimary))
+                    } else {
+                        Brush.horizontalGradient(listOf(ArushiCardDark, ArushiCardDark))
+                    }
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (isUser) Color.Transparent else ArushiBorderDark,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            Column {
+                Text(
+                    text = if (isUser) "You" else "Arushi",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUser) ArushiSecondary else ArushiSecondary.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = message.text,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    color = ArushiTextPrimaryDark
+                )
+            }
+        }
+
+        // Display Action Badge if a device action was triggered
+        if (message.actionBadge != null && message.actionSuccess != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            ActionBadgeCard(
+                actionName = message.actionBadge,
+                success = message.actionSuccess,
+                modifier = Modifier.padding(start = if (isUser) 0.dp else 4.dp, end = if (isUser) 4.dp else 0.dp)
+            )
+        }
+    }
+}

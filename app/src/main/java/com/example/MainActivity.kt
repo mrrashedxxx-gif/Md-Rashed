@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  * - ডার্ক থিম (#03050B -> #0A0F1E)
  * - আর্ক রিঅ্যাক্টর পিংক (#FF00A6) ও ১১০ডিপি মাইক বাটন
  * - স্ট্যাটাস: অপেক্ষায় / শুনছি / বলছি
- * - স্পিচ ইনপুট ও কমান্ড হ্যান্ডলিং সমন্বয়
+ * - ব্যাকগ্রাউন্ড হ্যান্ডস-ফ্রি সার্ভিসের সাথে পূর্ণাঙ্গ সমন্বয়
  */
 class MainActivity : AppCompatActivity() {
 
@@ -29,18 +29,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityMainBinding
-
-    // হেল্পার ও ম্যানেজারসমূহ
     private lateinit var permissionManager: PermissionManager
-    private lateinit var speechSynthesizer: SpeechSynthesizer
-    private lateinit var voiceAssistant: VoiceAssistant
-    private lateinit var appLauncher: AppLauncher
-    private lateinit var contactHelper: ContactHelper
-    private lateinit var callHelper: CallHelper
-    private lateinit var whatsAppHelper: WhatsAppHelper
-    private lateinit var smsHelper: SMSHelper
-    private lateinit var flashlightHelper: FlashlightHelper
-    private lateinit var commandHandler: CommandHandler
 
     // অ্যানিমেশন অবজেক্টসমূহ
     private var outerRingAnimator: ObjectAnimator? = null
@@ -50,86 +39,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "MainActivity শুরু হয়েছে।")
 
-        // ভিউ বাইন্ডিং সেটআপ করা
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // হেল্পার উপাদানগুলো তৈরি করা
-        initializeHelpers()
+        // আর্ক রিঅ্যাক্টর অ্যানিমেশন কনফিগার করা
+        setupArcReactorAnimations()
 
-        // পারমিশন ম্যানেজার প্রস্তুত ও পরীক্ষা করা
+        // পারমিশন ম্যানেজার ও রিকোয়েস্ট প্রস্তুত করা
         setupPermissions()
 
         // ইউআই ইভেন্ট লিসেনার সেটআপ করা
         setupClickListeners()
 
-        // আর্ক রিঅ্যাক্টর অ্যানিমেশন প্রস্তুত করা
-        setupArcReactorAnimations()
-
-        // ভয়েস অ্যাসিস্ট্যান্ট স্ট্যাটাস পর্যবেক্ষণ
-        observeAssistantState()
-
-        // প্রাথমিক স্বাগত সম্ভাষণ (নিরাপদ ডিলে)
-        binding.root.postDelayed({
-            if (!isFinishing && !isDestroyed) {
-                val welcomeText = getString(R.string.greeting_boss)
-                updateJarvisReply(welcomeText)
-                speechSynthesizer.speak(welcomeText)
-            }
-        }, 800)
-    }
-
-    /**
-     * প্রয়োজনীয় সমস্ত সাহায্যকারী উপাদান আরম্ভ করা
-     */
-    private fun initializeHelpers() {
-        appLauncher = AppLauncher(this)
-        contactHelper = ContactHelper(this)
-        callHelper = CallHelper(this)
-        whatsAppHelper = WhatsAppHelper(this)
-        smsHelper = SMSHelper(this)
-        flashlightHelper = FlashlightHelper(this)
-
-        commandHandler = CommandHandler(
-            context = this,
-            appLauncher = appLauncher,
-            contactHelper = contactHelper,
-            callHelper = callHelper,
-            whatsAppHelper = whatsAppHelper,
-            smsHelper = smsHelper,
-            flashlightHelper = flashlightHelper
-        )
-
-        // টেক্সট টু স্পিচ ইঞ্জিন শুরু করা
-        speechSynthesizer = SpeechSynthesizer(this) { isSpeaking ->
-            runOnUiThread {
-                if (isSpeaking) {
-                    voiceAssistant.updateState(AssistantState.SPEAKING)
-                    updateStatus(AssistantState.SPEAKING)
-                } else {
-                    voiceAssistant.updateState(AssistantState.IDLE)
-                    updateStatus(AssistantState.IDLE)
-                }
-            }
-        }
-
-        // বাংলা ভয়েস ইনপুট ইঞ্জিন শুরু করা
-        voiceAssistant = VoiceAssistant(
-            context = this,
-            onCommandRecognized = { recognizedText ->
-                processVoiceCommand(recognizedText)
-            },
-            onRmsChanged = { rms ->
-                runOnUiThread {
-                    // মাইক্রোফোনের শব্দের তীব্রতা অনুযায়ী হালকা স্কেলিং (থ্রেড-সেফ)
-                    if (voiceAssistant.state.value == AssistantState.LISTENING && !isFinishing && !isDestroyed) {
-                        val scale = 1.0f + (rms.coerceIn(0f, 10f) / 40f)
-                        binding.btnMic.scaleX = scale
-                        binding.btnMic.scaleY = scale
-                    }
-                }
-            }
-        )
+        // সার্ভিসের স্টেট ও ডাটা পর্যবেক্ষণ করা
+        observeServiceState()
     }
 
     /**
@@ -142,15 +65,15 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     binding.btnPermissionRequest.visibility = View.GONE
                     Log.d(TAG, "সকল পারমিশন সফলভাবে অনুমোদিত।")
-                    // পারমিশন পাওয়ার পর নিরাপদে ব্যাকগ্রাউন্ড সার্ভিস চালু করা
-                    JarvisService.startService(this@MainActivity)
+                    // পারমিশন পাওয়ার পর ব্যাকগ্রাউন্ড হ্যান্ডস-ফ্রি সার্ভিস চালু করা
+                    JarvisService.startHandsFree(this@MainActivity, announce = true)
                 }
             },
             onPermissionDenied = { deniedList ->
                 runOnUiThread {
                     binding.btnPermissionRequest.visibility = View.VISIBLE
                     val warning = getString(R.string.permission_required_warning)
-                    updateJarvisReply(warning)
+                    binding.tvJarvisReply.text = warning
                 }
             }
         )
@@ -160,32 +83,49 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * ব্যবহারকারীর ভয়েস কমান্ড সম্পাদন করা
+     * সার্ভিসের স্টেটফ্লো পর্যবেক্ষণ করে ইউআই সিঙ্ক রাখা
      */
-    private fun processVoiceCommand(command: String) {
-        runOnUiThread {
-            binding.tvUserQuery.text = command
-            binding.tvStatus.text = getString(R.string.status_processing)
-            binding.tvStatus.setTextColor(ContextCompat.getColor(this, R.color.arc_reactor_cyan))
+    private fun observeServiceState() {
+        // অ্যাসিস্ট্যান্ট স্টেট (IDLE, LISTENING, SPEAKING)
+        lifecycleScope.launch {
+            JarvisService.assistantState.collect { state ->
+                runOnUiThread {
+                    updateStatus(state)
+                }
+            }
         }
 
+        // ব্যবহারকারীর সর্বশেষ বলা কথা
         lifecycleScope.launch {
-            val result = commandHandler.handleCommand(command)
+            JarvisService.userQuery.collect { query ->
+                runOnUiThread {
+                    if (query.isNotBlank()) {
+                        binding.tvUserQuery.text = query
+                    }
+                }
+            }
+        }
 
-            runOnUiThread {
-                updateJarvisReply(result.replyText)
-                speechSynthesizer.speak(result.replyText)
+        // জারভিসের প্রত্যুত্তর
+        lifecycleScope.launch {
+            JarvisService.jarvisReply.collect { reply ->
+                runOnUiThread {
+                    if (reply.isNotBlank()) {
+                        binding.tvJarvisReply.text = reply
+                    }
+                }
+            }
+        }
 
-                if (result.shouldCloseApp) {
-                    binding.root.postDelayed({
-                        finishAffinity()
-                    }, 2500)
-                } else if (result.shouldPauseListening) {
-                    voiceAssistant.isPaused = true
-                    voiceAssistant.stopListening()
-                } else if (result.shouldResumeListening) {
-                    voiceAssistant.isPaused = false
-                    startVoiceListening()
+        // মাইক্রোফোনের অডিও লেভেল অনুসারে পালসিং ইফেক্ট
+        lifecycleScope.launch {
+            JarvisService.rmsLevel.collect { rms ->
+                runOnUiThread {
+                    if (JarvisService.assistantState.value == AssistantState.LISTENING && !isFinishing && !isDestroyed) {
+                        val scale = 1.0f + (rms.coerceIn(0f, 10f) / 45f)
+                        binding.btnMic.scaleX = scale
+                        binding.btnMic.scaleY = scale
+                    }
                 }
             }
         }
@@ -195,21 +135,22 @@ class MainActivity : AppCompatActivity() {
      * ইউআই ক্লিক ইভেন্টস সেটআপ
      */
     private fun setupClickListeners() {
-        // ১১০ডিপি মাইক বাটনে ট্যাপ করলে কথা শোনা শুরু/বন্ধ করা
+        // ১১০ডিপি মাইক বাটনে ট্যাপ করলে হ্যান্ডস-ফ্রি মোড টগল বা চালু করা
         binding.btnMic.setOnClickListener {
-            if (voiceAssistant.state.value == AssistantState.LISTENING) {
-                voiceAssistant.stopListening()
-            } else {
-                speechSynthesizer.stop()
-                startVoiceListening()
+            if (!permissionManager.hasAllPermissions(this)) {
+                permissionManager.checkAndRequestPermissions()
+                return@setOnClickListener
             }
+            JarvisService.toggleHandsFree(this)
         }
 
         // কথা থামাও বাটন
         binding.btnStopVoice.setOnClickListener {
-            speechSynthesizer.stop()
-            voiceAssistant.stopListening()
-            updateStatus(AssistantState.IDLE)
+            JarvisService.stopHandsFree(
+                this,
+                announce = true,
+                customAnnounce = getString(R.string.reply_handsfree_stopped)
+            )
         }
 
         // পারমিশন রিকোয়েস্ট বাটন
@@ -218,38 +159,25 @@ class MainActivity : AppCompatActivity() {
         }
 
         // দ্রুত সাজেশনের চিপস
-        binding.chipYoutube.setOnClickListener { processVoiceCommand("ইউটিউব") }
-        binding.chipWhatsapp.setOnClickListener { processVoiceCommand("হোয়াটসঅ্যাপ") }
-        binding.chipCallMom.setOnClickListener { processVoiceCommand("মাকে ফোন দাও") }
-        binding.chipTime.setOnClickListener { processVoiceCommand("সময় কত") }
-        binding.chipDate.setOnClickListener { processVoiceCommand("আজকের তারিখ") }
-        binding.chipMusic.setOnClickListener { processVoiceCommand("গান বাজাও") }
-        binding.chipTorch.setOnClickListener { processVoiceCommand("ফ্ল্যাশলাইট অন") }
-        binding.chipFacebook.setOnClickListener { processVoiceCommand("ফেসবুক") }
+        binding.chipYoutube.setOnClickListener { executeCommand("ইউটিউব") }
+        binding.chipWhatsapp.setOnClickListener { executeCommand("হোয়াটসঅ্যাপ") }
+        binding.chipCallMom.setOnClickListener { executeCommand("মাকে ফোন দাও") }
+        binding.chipTime.setOnClickListener { executeCommand("সময় কত") }
+        binding.chipDate.setOnClickListener { executeCommand("আজকের তারিখ") }
+        binding.chipMusic.setOnClickListener { executeCommand("গান বাজাও") }
+        binding.chipTorch.setOnClickListener { executeCommand("ফ্ল্যাশলাইট অন") }
+        binding.chipFacebook.setOnClickListener { executeCommand("ফেসবুক") }
     }
 
     /**
-     * ভয়েস লিসেনিং শুরু করা (পারমিশন যাচাই করে)
+     * টেক্সট ক্লিকের মাধ্যমে কমান্ড পরিচালনা
      */
-    private fun startVoiceListening() {
+    private fun executeCommand(command: String) {
         if (!permissionManager.hasAllPermissions(this)) {
             permissionManager.checkAndRequestPermissions()
             return
         }
-        voiceAssistant.startListening()
-    }
-
-    /**
-     * ভয়েস অ্যাসিস্ট্যান্ট স্টেট লিসেনার
-     */
-    private fun observeAssistantState() {
-        lifecycleScope.launch {
-            voiceAssistant.state.collect { state ->
-                runOnUiThread {
-                    updateStatus(state)
-                }
-            }
-        }
+        JarvisService.executeManualCommand(this, command)
     }
 
     /**
@@ -276,13 +204,6 @@ class MainActivity : AppCompatActivity() {
                 startSpeakingPulse()
             }
         }
-    }
-
-    /**
-     * জারভিসের উত্তর কার্ড আপডেট করা
-     */
-    private fun updateJarvisReply(text: String) {
-        binding.tvJarvisReply.text = text
     }
 
     /**
@@ -341,28 +262,25 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (voiceAssistant.state.value == AssistantState.LISTENING) {
-            startArcAnimation()
-        }
+        // অ্যাক্টিভিটি পুনরায় দৃশ্যমান হলে স্ট্যাটাস রিফ্রেশ ও অ্যানিমেশন চালু
+        updateStatus(JarvisService.assistantState.value)
     }
 
     override fun onPause() {
         super.onPause()
+        // ব্যাকগ্রাউন্ডে যাওয়ার সময় কেবল ইউআই অ্যানিমেশন বন্ধ করা হয়,
+        // যাতে অপ্রয়োজনীয় সিপিইউ বা ফ্রেম রিলিজ ত্রুটি না ঘটে।
+        // ব্যাকগ্রাউন্ড ভয়েস লিসেনিং সার্ভিস অক্ষত থাকে।
         stopArcAnimation()
-        speechSynthesizer.stop()
-        voiceAssistant.stopListening()
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "MainActivity বিনষ্ট হচ্ছে। রিসোর্স মুক্ত করা হচ্ছে...")
+        Log.d(TAG, "MainActivity রিসোর্স মুক্ত করা হচ্ছে...")
         stopArcAnimation()
         outerRingAnimator?.removeAllListeners()
         middleRingAnimator?.removeAllListeners()
         outerRingAnimator = null
         middleRingAnimator = null
-        speechSynthesizer.shutdown()
-        voiceAssistant.destroy()
-        flashlightHelper.turnOff()
         super.onDestroy()
     }
 }

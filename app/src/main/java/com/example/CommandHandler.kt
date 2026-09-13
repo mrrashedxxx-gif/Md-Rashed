@@ -87,16 +87,16 @@ class CommandHandler(
             )
         }
 
-        if (command.contains("থামো") || command.contains("চুপ করো") || command.contains("শোনা বন্ধ করো")) {
+        if (command.contains("থামো") || command.contains("চুপ করো") || command.contains("শোনা বন্ধ করো") || command.contains("লিসেনিং বন্ধ করো") || command.contains("লিসেনিং বন্ধ")) {
             return@withContext CommandResult(
-                replyText = context.getString(R.string.reply_stop_listening),
+                replyText = context.getString(R.string.reply_handsfree_stopped),
                 shouldPauseListening = true
             )
         }
 
-        if (command.contains("আবার শুরু করো") || command.contains("শুরু করো") || command.contains("কথা শোনো")) {
+        if (command.contains("আবার শুরু করো") || command.contains("শুরু করো") || command.contains("কথা শোনো") || command.contains("শোনা শুরু করো")) {
             return@withContext CommandResult(
-                replyText = context.getString(R.string.reply_resume_listening),
+                replyText = context.getString(R.string.reply_handsfree_resumed),
                 shouldResumeListening = true
             )
         }
@@ -137,35 +137,36 @@ class CommandHandler(
         // ==========================================
         // 📺 বিনোদন ও ইউটিউব
         // ==========================================
-        if (command.contains("ইউটিউবে গান বাজাও") || command.contains("ইউটিউবে গান")) {
+        if (command.contains("ইউটিউবে গান বাজাও") || command.contains("ইউটিউবে গান চালাও") || command.contains("ইউটিউবে গান")) {
             appLauncher.searchYouTube("জনপ্রিয় বাংলা গান")
-            return@withContext CommandResult(context.getString(R.string.reply_youtube_search, "জনপ্রিয় বাংলা গান"))
+            return@withContext CommandResult(context.getString(R.string.reply_music_search))
         }
 
-        if (command.contains("ইউটিউবে সার্চ করো") || command.contains("ইউটিউবে খোঁজ")) {
-            val query = extractQuery(command, listOf("ইউটিউবে সার্চ করো", "ইউটিউবে খোঁজো", "ইউটিউবে খুঁজুন"))
+        if (command.contains("ইউটিউবে সার্চ করো") || command.contains("ইউটিউবে খোঁজ") || command.contains("ইউটিউবে খুঁজে দাও")) {
+            val query = extractQuery(command, listOf("ইউটিউবে সার্চ করো", "ইউটিউবে খোঁজো", "ইউটিউবে খুঁজুন", "ইউটিউবে খুঁজে দাও", "ইউটিউবে"))
             appLauncher.searchYouTube(query)
             return@withContext CommandResult(context.getString(R.string.reply_youtube_search, query))
         }
 
-        if (command.contains("ইউটিউব") || command.contains("youtube")) {
-            appLauncher.openYouTube()
-            return@withContext CommandResult(context.getString(R.string.reply_youtube_open))
+        // গান বাজানো বা চালানোর সকল ভ্যারিয়েশন
+        if (command.contains("গান চালাও") || command.contains("গান প্লে করো") || command.contains("গান চালিয়ে দাও") ||
+            command.contains("একটা গান চালিয়ে দাও") || command.contains("গান বাজাও") || command.contains("মিউজিক চালাও") ||
+            command.contains("গান শুনবো") || command.contains("গান শোনাও")) {
+            appLauncher.searchYouTube("জনপ্রিয় বাংলা গান")
+            return@withContext CommandResult(context.getString(R.string.reply_music_search))
         }
 
-        if (command.contains("মুভি দেখাও") || command.contains("সিনেমা দেখাও") || command.contains("সিনেমা দেখতে চাই")) {
+        // মুভি সার্চের সকল ভ্যারিয়েশন
+        if (command.contains("মুভি দেখাও") || command.contains("একটা মুভি খুঁজে দাও") || command.contains("মুভি সার্চ করো") ||
+            command.contains("সিনেমা দেখাও") || command.contains("সিনেমা দেখতে চাই") || command.contains("মুভি দেখতে চাই")) {
             appLauncher.searchYouTube("সেরা বাংলা মুভি")
             return@withContext CommandResult(context.getString(R.string.reply_movie_search))
         }
 
-        if (command.contains("নাটক দেখাও") || command.contains("বাংলা নাটক") || command.contains("নাটক দেখতে চাই")) {
-            appLauncher.searchYouTube("জনপ্রিয় বাংলা নতুন নাটক")
-            return@withContext CommandResult(context.getString(R.string.reply_drama_search))
-        }
-
-        if (command.contains("গান বাজাও") || command.contains("গান চালাও") || command.contains("মিউজিক চালাও")) {
-            appLauncher.playMusic()
-            return@withContext CommandResult(context.getString(R.string.reply_music_play))
+        // ইউটিউব ওপেন করার সকল ভ্যারিয়েশন
+        if (command.contains("ইউটিউব") || command.contains("youtube")) {
+            appLauncher.openYouTube()
+            return@withContext CommandResult(context.getString(R.string.reply_youtube_open))
         }
 
         if (command.contains("নেটফ্লিক্স") || command.contains("netflix")) {
@@ -380,6 +381,12 @@ class CommandHandler(
                 appLauncher.launchPackage(AppLauncher.PKG_MAPS, "https://maps.google.com")
                 return@withContext CommandResult(context.getString(R.string.reply_maps_open))
             }
+        }
+
+        if (command.contains("সার্চ করো") || command.contains("খুঁজে দাও") || command.contains("খোঁজো")) {
+            val query = extractQuery(command, listOf("সার্চ করো", "খুঁজে দাও", "খোঁজো", "খুঁজুন", "সার্চ"))
+            appLauncher.searchYouTube(query)
+            return@withContext CommandResult(context.getString(R.string.reply_youtube_search, query))
         }
 
         if (command.contains("গুগল") || command.contains("google")) {

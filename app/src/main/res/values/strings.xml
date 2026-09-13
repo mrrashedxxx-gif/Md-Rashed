@@ -18,11 +18,12 @@
     <string name="jarvis_response_label">জারভিস:</string>
 
     <!-- কমান্ড সফলতার বার্তা -->
-    <string name="reply_youtube_open">বস, ইউটিউব চালু করছি।</string>
+    <string name="reply_youtube_open">বস, ইউটিউব খুলছি।</string>
     <string name="reply_youtube_search">বস, ইউটিউবে %1$s অনুসন্ধান করছি।</string>
-    <string name="reply_movie_search">বস, আপনার জন্য সেরা মুভিগুলো অনুসন্ধান করছি।</string>
+    <string name="reply_movie_search">বস, মুভি সার্চ করছি।</string>
     <string name="reply_drama_search">বস, জনপ্রিয় বাংলা নাটকগুলো দেখাচ্ছি।</string>
     <string name="reply_music_play">বস, গান বাজানো শুরু করছি।</string>
+    <string name="reply_music_search">বস, গান খুঁজে দিচ্ছি।</string>
     <string name="reply_netflix_open">বস, নেটফ্লিক্স ওপেন করছি।</string>
     <string name="reply_prime_open">বস, অ্যামাজন প্রাইম ভিডিও খুলছি।</string>
 
@@ -74,8 +75,13 @@
     <string name="reply_unrecognized_command">বস, আপনার নির্দেশটি বুঝতে পারিনি। দয়া করে আবার বলুন।</string>
 
     <!-- নোটিফিকেশন ও সার্ভিস বার্তা -->
-    <string name="service_notification_title">Jarvis Bangla Voice Assistant</string>
-    <string name="service_notification_text">জারভিস সক্রিয় রয়েছে। যেকোনো সময় কথা বলুন।</string>
+    <string name="service_notification_title">Jarvis সক্রিয়</string>
+    <string name="service_notification_text">ভয়েস কমান্ড শোনার জন্য প্রস্তুত</string>
+    <string name="notification_action_stop">থামাও</string>
     <string name="permission_required_warning">বস, মাইক্রোফোন, কল ও কন্টাক্ট পারমিশন প্রয়োজন।</string>
+    <string name="permission_audio_denied_warning">বস, ভয়েস কমান্ডের জন্য মাইক্রোফোনের অনুমতি প্রয়োজন।</string>
     <string name="btn_grant_permissions">পারমিশন দিন</string>
+    <string name="reply_handsfree_ready">বস, আমি প্রস্তুত।</string>
+    <string name="reply_handsfree_resumed">বস, আমি আবার শুনছি।</string>
+    <string name="reply_handsfree_stopped">বস, আমি এখন শুনছি না।</string>
 </resources>

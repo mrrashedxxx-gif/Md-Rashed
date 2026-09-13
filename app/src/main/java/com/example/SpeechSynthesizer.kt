@@ -29,6 +29,7 @@ class SpeechSynthesizer(
     private var tts: TextToSpeech? = null
     private var isInitialized = false
     private var pendingSpeech: String? = null
+    private var currentOnComplete: (() -> Unit)? = null
 
     init {
         // টেক্সট টু স্পিচ ইঞ্জিন শুরু করা
@@ -138,16 +139,25 @@ class SpeechSynthesizer(
 
             override fun onDone(utteranceId: String?) {
                 onSpeechStatusChanged(false)
+                val cb = currentOnComplete
+                currentOnComplete = null
+                cb?.invoke()
             }
 
             @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?) {
                 onSpeechStatusChanged(false)
+                val cb = currentOnComplete
+                currentOnComplete = null
+                cb?.invoke()
                 Log.e(TAG, "কথা বলার সময় কোনো ত্রুটি ঘটেছে।")
             }
 
             override fun onError(utteranceId: String?, errorCode: Int) {
                 onSpeechStatusChanged(false)
+                val cb = currentOnComplete
+                currentOnComplete = null
+                cb?.invoke()
                 Log.e(TAG, "কথা বলার সময় ত্রুটি কোড: $errorCode")
             }
         })
@@ -158,6 +168,7 @@ class SpeechSynthesizer(
      * প্রতিটি বার্তা "বস" দিয়ে শুরু হয় তা নিশ্চিত করা হয়।
      */
     fun speak(text: String, onComplete: (() -> Unit)? = null) {
+        currentOnComplete = onComplete
         if (!isInitialized || tts == null) {
             Log.w(TAG, "TTS এখনো প্রস্তুত হয়নি, কথাটি পরে বলার জন্য পেন্ডিং রাখা হলো: $text")
             pendingSpeech = text

@@ -72,8 +72,23 @@ class MainActivity : AppCompatActivity() {
             onPermissionDenied = { deniedList ->
                 runOnUiThread {
                     binding.btnPermissionRequest.visibility = View.VISIBLE
-                    val warning = getString(R.string.permission_required_warning)
-                    binding.tvJarvisReply.text = warning
+                    val hasPermanentlyDenied = deniedList.any { !PermissionManager.shouldShowRationale(this@MainActivity, it) }
+                    if (hasPermanentlyDenied) {
+                        binding.btnPermissionRequest.text = getString(R.string.btn_open_settings)
+                        binding.tvJarvisReply.text = getString(R.string.permission_settings_prompt)
+                    } else {
+                        binding.btnPermissionRequest.text = getString(R.string.btn_grant_permissions)
+                        val warning = when {
+                            !PermissionManager.hasMicrophonePermission(this@MainActivity) ->
+                                getString(R.string.permission_audio_denied_warning)
+                            !PermissionManager.hasContactsPermission(this@MainActivity) ->
+                                getString(R.string.permission_contacts_denied_warning)
+                            !PermissionManager.hasPhoneStatePermission(this@MainActivity) ->
+                                getString(R.string.permission_phone_state_denied_warning)
+                            else -> getString(R.string.permission_required_warning)
+                        }
+                        binding.tvJarvisReply.text = warning
+                    }
                 }
             }
         )
@@ -160,7 +175,13 @@ class MainActivity : AppCompatActivity() {
 
         // পারমিশন রিকোয়েস্ট বাটন
         binding.btnPermissionRequest.setOnClickListener {
-            permissionManager.checkAndRequestPermissions()
+            val missing = PermissionManager.getMissingPermissions(this)
+            val hasPermanentlyDenied = missing.any { !PermissionManager.shouldShowRationale(this, it) }
+            if (hasPermanentlyDenied) {
+                PermissionManager.openAppSettings(this)
+            } else {
+                permissionManager.checkAndRequestPermissions()
+            }
         }
 
         // দ্রুত সাজেশনের চিপস
@@ -269,6 +290,11 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // অ্যাক্টিভিটি পুনরায় দৃশ্যমান হলে স্ট্যাটাস রিফ্রেশ ও অ্যানিমেশন চালু
         updateStatus(JarvisService.assistantState.value)
+
+        // সেটিংস থেকে ফিরে আসলে পারমিশন স্ট্যাটাস পুনরায় যাচাই করা
+        if (::permissionManager.isInitialized && PermissionManager.hasAllPermissions(this)) {
+            binding.btnPermissionRequest.visibility = View.GONE
+        }
     }
 
     override fun onPause() {

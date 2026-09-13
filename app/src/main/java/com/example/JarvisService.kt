@@ -167,6 +167,7 @@ class JarvisService : Service() {
     private var whatsAppHelper: WhatsAppHelper? = null
     private var smsHelper: SMSHelper? = null
     private var flashlightHelper: FlashlightHelper? = null
+    private var phoneStateHelper: PhoneStateHelper? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -216,6 +217,25 @@ class JarvisService : Service() {
                 _assistantState.value = state
             }
         )
+
+        // READ_PHONE_STATE পারমিশন সাপেক্ষে ফোন কল স্টেট পর্যবেক্ষণ
+        if (PermissionManager.hasPhoneStatePermission(this)) {
+            phoneStateHelper = PhoneStateHelper(this) { state ->
+                when (state) {
+                    PhoneStateHelper.CallState.RINGING, PhoneStateHelper.CallState.OFFHOOK -> {
+                        Log.d(TAG, "কল সক্রিয় থাকায় জারভিসের অডিও সাময়িক থামানো হলো।")
+                        speechSynthesizer?.stop()
+                        voiceAssistant?.stopListening()
+                    }
+                    PhoneStateHelper.CallState.IDLE -> {
+                        Log.d(TAG, "কল সমাপ্ত হয়েছে।")
+                        if (_isHandsFreeActive.value) {
+                            voiceAssistant?.startListening()
+                        }
+                    }
+                }
+            }.also { it.startListening() }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -417,6 +437,8 @@ class JarvisService : Service() {
 
     override fun onDestroy() {
         Log.d(TAG, "JarvisService সমাপ্ত হচ্ছে...")
+        phoneStateHelper?.stopListening()
+        phoneStateHelper = null
         if (activeServiceInstance == this) {
             activeServiceInstance = null
         }

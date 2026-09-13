@@ -33,13 +33,17 @@ class JarvisService : Service() {
          * সার্ভিস শুরু করার হেল্পার মেথড
          */
         fun startService(context: Context) {
-            val intent = Intent(context, JarvisService::class.java).apply {
-                action = ACTION_START
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                val intent = Intent(context, JarvisService::class.java).apply {
+                    action = ACTION_START
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "সার্ভিস চালুর সময় অপ্রত্যাশিত ত্রুটি: ${e.localizedMessage}")
             }
         }
 
@@ -47,10 +51,14 @@ class JarvisService : Service() {
          * সার্ভিস থামানোর হেল্পার মেথড
          */
         fun stopService(context: Context) {
-            val intent = Intent(context, JarvisService::class.java).apply {
-                action = ACTION_STOP
+            try {
+                val intent = Intent(context, JarvisService::class.java).apply {
+                    action = ACTION_STOP
+                }
+                context.stopService(intent)
+            } catch (e: Exception) {
+                Log.w(TAG, "সার্ভিস বন্ধের সময় সমস্যা: ${e.localizedMessage}")
             }
-            context.stopService(intent)
         }
     }
 
@@ -69,24 +77,36 @@ class JarvisService : Service() {
             return START_NOT_STICKY
         }
 
-        val notification = buildNotification()
+        try {
+            val notification = buildNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "মাইক্রোফোন টাইপ ফোরগ্রাউন্ড স্টার্টে সমস্যা: ${e.localizedMessage}")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val hasMicPerm = androidx.core.content.ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.RECORD_AUDIO
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                if (hasMicPerm) {
+                    try {
+                        startForeground(
+                            NOTIFICATION_ID,
+                            notification,
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                        )
+                    } catch (e: Exception) {
+                        Log.w(TAG, "মাইক্রোফোন টাইপ ফোরগ্রাউন্ড স্টার্টে সমস্যা: ${e.localizedMessage}")
+                        startForeground(NOTIFICATION_ID, notification)
+                    }
+                } else {
+                    startForeground(NOTIFICATION_ID, notification)
+                }
+            } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+            Log.d(TAG, "JarvisService ফোরগ্রাউন্ডে চালু হয়েছে।")
+        } catch (e: Exception) {
+            Log.w(TAG, "সার্ভিস ফোরগ্রাউন্ড নোটিফিকেশন সেট করতে ব্যর্থ: ${e.localizedMessage}")
         }
-
-        Log.d(TAG, "JarvisService ফোরগ্রাউন্ডে চালু হয়েছে।")
         return START_STICKY
     }
 

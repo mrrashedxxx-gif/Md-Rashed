@@ -69,14 +69,13 @@ class MainActivity : AppCompatActivity() {
         // ভয়েস অ্যাসিস্ট্যান্ট স্ট্যাটাস পর্যবেক্ষণ
         observeAssistantState()
 
-        // ব্যাকগ্রাউন্ড ফোরগ্রাউন্ড সার্ভিস চালু করা
-        JarvisService.startService(this)
-
-        // প্রাথমিক স্বাগত সম্ভাষণ
+        // প্রাথমিক স্বাগত সম্ভাষণ (নিরাপদ ডিলে)
         binding.root.postDelayed({
-            val welcomeText = getString(R.string.greeting_boss)
-            updateJarvisReply(welcomeText)
-            speechSynthesizer.speak(welcomeText)
+            if (!isFinishing && !isDestroyed) {
+                val welcomeText = getString(R.string.greeting_boss)
+                updateJarvisReply(welcomeText)
+                speechSynthesizer.speak(welcomeText)
+            }
         }, 800)
     }
 
@@ -121,11 +120,13 @@ class MainActivity : AppCompatActivity() {
                 processVoiceCommand(recognizedText)
             },
             onRmsChanged = { rms ->
-                // মাইক্রোফোনের শব্দের তীব্রতা অনুযায়ী হালকা স্কেলিং
-                if (voiceAssistant.state.value == AssistantState.LISTENING) {
-                    val scale = 1.0f + (rms.coerceIn(0f, 10f) / 40f)
-                    binding.btnMic.scaleX = scale
-                    binding.btnMic.scaleY = scale
+                runOnUiThread {
+                    // মাইক্রোফোনের শব্দের তীব্রতা অনুযায়ী হালকা স্কেলিং (থ্রেড-সেফ)
+                    if (voiceAssistant.state.value == AssistantState.LISTENING && !isFinishing && !isDestroyed) {
+                        val scale = 1.0f + (rms.coerceIn(0f, 10f) / 40f)
+                        binding.btnMic.scaleX = scale
+                        binding.btnMic.scaleY = scale
+                    }
                 }
             }
         )
@@ -141,6 +142,8 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     binding.btnPermissionRequest.visibility = View.GONE
                     Log.d(TAG, "সকল পারমিশন সফলভাবে অনুমোদিত।")
+                    // পারমিশন পাওয়ার পর নিরাপদে ব্যাকগ্রাউন্ড সার্ভিস চালু করা
+                    JarvisService.startService(this@MainActivity)
                 }
             },
             onPermissionDenied = { deniedList ->
@@ -309,11 +312,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startArcAnimation() {
-        if (outerRingAnimator?.isStarted != true) {
-            outerRingAnimator?.start()
-        }
-        if (middleRingAnimator?.isStarted != true) {
-            middleRingAnimator?.start()
+        binding.outerPulseRing.post {
+            if (isFinishing || isDestroyed) return@post
+            if (outerRingAnimator?.isStarted != true) {
+                outerRingAnimator?.start()
+            }
+            if (middleRingAnimator?.isStarted != true) {
+                middleRingAnimator?.start()
+            }
         }
     }
 
@@ -333,9 +339,27 @@ class MainActivity : AppCompatActivity() {
         binding.middleRing.rotation = 0f
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (voiceAssistant.state.value == AssistantState.LISTENING) {
+            startArcAnimation()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopArcAnimation()
+        speechSynthesizer.stop()
+        voiceAssistant.stopListening()
+    }
+
     override fun onDestroy() {
         Log.d(TAG, "MainActivity বিনষ্ট হচ্ছে। রিসোর্স মুক্ত করা হচ্ছে...")
         stopArcAnimation()
+        outerRingAnimator?.removeAllListeners()
+        middleRingAnimator?.removeAllListeners()
+        outerRingAnimator = null
+        middleRingAnimator = null
         speechSynthesizer.shutdown()
         voiceAssistant.destroy()
         flashlightHelper.turnOff()

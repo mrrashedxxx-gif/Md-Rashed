@@ -28,6 +28,7 @@ class SpeechSynthesizer(
 
     private var tts: TextToSpeech? = null
     private var isInitialized = false
+    private var pendingSpeech: String? = null
 
     init {
         // টেক্সট টু স্পিচ ইঞ্জিন শুরু করা
@@ -44,6 +45,11 @@ class SpeechSynthesizer(
             configureVoiceSettings()
             setupProgressListener()
             Log.d(TAG, "টেক্সট টু স্পিচ ইঞ্জিন সফলভাবে প্রস্তুত হয়েছে।")
+            // যদি আগে কোনো বার্তা পেন্ডিং থাকে তবে তা এখনই বলা
+            pendingSpeech?.let { pending ->
+                pendingSpeech = null
+                speak(pending)
+            }
         } else {
             isInitialized = false
             Log.e(TAG, "টেক্সট টু স্পিচ ইঞ্জিন প্রস্তুতি ব্যর্থ হয়েছে। স্ট্যাটাস কোড: $status")
@@ -153,7 +159,8 @@ class SpeechSynthesizer(
      */
     fun speak(text: String, onComplete: (() -> Unit)? = null) {
         if (!isInitialized || tts == null) {
-            Log.w(TAG, "TTS এখনো প্রস্তুত হয়নি। টেক্সট: $text")
+            Log.w(TAG, "TTS এখনো প্রস্তুত হয়নি, কথাটি পরে বলার জন্য পেন্ডিং রাখা হলো: $text")
+            pendingSpeech = text
             return
         }
 

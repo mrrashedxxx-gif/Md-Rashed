@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.MyApplication" parent="android:Theme.DeviceDefault.NoActionBar" />
+    <!-- জারভিস বাংলা থিম - মেটেরিয়াল থ্রি ডার্ক সাপোর্ট -->
+    <style name="Theme.MyApplication" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:statusBarColor">@color/bg_dark_start</item>
+        <item name="android:navigationBarColor">@color/bg_dark_end</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

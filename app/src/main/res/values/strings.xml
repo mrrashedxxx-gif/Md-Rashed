@@ -1,3 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MrRobot</string>
+    <!-- অ্যাপের নাম -->
+    <string name="app_name">Jarvis Bangla</string>
+    <string name="app_subtitle">বাংলা ভয়েস অ্যাসিস্ট্যান্ট</string>
+    <string name="user_address">বস</string>
+
+    <!-- স্ট্যাটাস টেক্সটসমূহ -->
+    <string name="status_idle">অপেক্ষায়</string>
+    <string name="status_listening">শুনছি...</string>
+    <string name="status_speaking">বলছি...</string>
+    <string name="status_processing">নির্দেশনা যাচাই করছি...</string>
+
+    <!-- স্বাগত বার্তা -->
+    <string name="greeting_boss">বস, আমি জারভিস। বলুন কীভাবে সাহায্য করতে পারি?</string>
+    <string name="tap_to_speak">কথা বলতে মাইক্রোফোনে ট্যাপ করুন</string>
+    <string name="user_query_label">আপনি বলেছেন:</string>
+    <string name="jarvis_response_label">জারভিস:</string>
+
+    <!-- কমান্ড সফলতার বার্তা -->
+    <string name="reply_youtube_open">বস, ইউটিউব চালু করছি।</string>
+    <string name="reply_youtube_search">বস, ইউটিউবে %1$s অনুসন্ধান করছি।</string>
+    <string name="reply_movie_search">বস, আপনার জন্য সেরা মুভিগুলো অনুসন্ধান করছি।</string>
+    <string name="reply_drama_search">বস, জনপ্রিয় বাংলা নাটকগুলো দেখাচ্ছি।</string>
+    <string name="reply_music_play">বস, গান বাজানো শুরু করছি।</string>
+    <string name="reply_netflix_open">বস, নেটফ্লিক্স ওপেন করছি।</string>
+    <string name="reply_prime_open">বস, অ্যামাজন প্রাইম ভিডিও খুলছি।</string>
+
+    <!-- সোশ্যাল মিডিয়া বার্তা -->
+    <string name="reply_facebook_open">বস, ফেসবুক ওপেন করছি।</string>
+    <string name="reply_reels_open">বস, ফেসবুক রিলস দেখাচ্ছি।</string>
+    <string name="reply_instagram_open">বস, ইনস্টাগ্রাম খুলছি।</string>
+    <string name="reply_tiktok_open">বস, টিকটক ওপেন করছি।</string>
+    <string name="reply_snapchat_open">বস, স্ন্যাপচ্যাট ওপেন করছি।</string>
+    <string name="reply_twitter_open">বস, টুইটার খুলছি।</string>
+    <string name="reply_whatsapp_open">বস, হোয়াটসঅ্যাপ ওপেন করছি।</string>
+    <string name="reply_messenger_open">বস, মেসেঞ্জার ওপেন করছি।</string>
+    <string name="reply_telegram_open">বস, টেলিগ্রাম ওপেন করছি।</string>
+
+    <!-- যোগাযোগ বার্তা -->
+    <string name="reply_calling_contact">বস, %1$s কে কল দিচ্ছি।</string>
+    <string name="reply_calling_number">বস, %1$s নম্বরে কল করা হচ্ছে।</string>
+    <string name="reply_contact_not_found">বস, %1$s নামের কোনো নম্বর আপনার কন্টাক্ট লিস্টে খুঁজে পাইনি।</string>
+    <string name="reply_whatsapp_msg_sent">বস, %1$s কে হোয়াটসঅ্যাপে বার্তা পাঠানো হচ্ছে।</string>
+    <string name="reply_sms_sent">বস, %1$s কে এসএমএস পাঠানো হয়েছে।</string>
+    <string name="reply_sms_failed">বস, এসএমএস পাঠানো সম্ভব হয়নি।</string>
+
+    <!-- অ্যাপ বার্তা -->
+    <string name="reply_camera_open">বস, ক্যামেরা চালু করছি।</string>
+    <string name="reply_gallery_open">বস, গ্যালারি ওপেন করছি।</string>
+    <string name="reply_playstore_open">বস, গুগল প্লে স্টোর খুলছি।</string>
+    <string name="reply_google_open">বস, গুগল সার্চ ওপেন করছি।</string>
+    <string name="reply_maps_open">বস, গুগল ম্যাপস চালু করছি।</string>
+    <string name="reply_calculator_open">বস, ক্যালকুলেটর ওপেন করছি।</string>
+    <string name="reply_settings_open">বস, ফোনের সেটিংস খুলছি।</string>
+    <string name="reply_flashlight_on">বস, ফ্ল্যাশলাইট চালু করেছি।</string>
+    <string name="reply_flashlight_off">বস, ফ্ল্যাশলাইট বন্ধ করেছি।</string>
+    <string name="reply_alarm_open">বস, অ্যালার্ম অ্যাপ খুলছি।</string>
+    <string name="reply_contacts_open">বস, কন্টাক্ট লিস্ট দেখাচ্ছি।</string>
+    <string name="reply_filemanager_open">বস, ফাইল ম্যানেজার ওপেন করছি।</string>
+    <string name="reply_calendar_open">বস, ক্যালেন্ডার ওপেন করছি।</string>
+
+    <!-- তথ্য সম্পর্কিত বার্তা -->
+    <string name="reply_current_time">বস, এখন সময় %1$s।</string>
+    <string name="reply_current_date">বস, আজকের তারিখ %1$s।</string>
+    <string name="reply_current_day">বস, আজ %1$s।</string>
+
+    <!-- সার্চ ও কন্ট্রোল বার্তা -->
+    <string name="reply_google_search">বস, গুগলে %1$s অনুসন্ধান করছি।</string>
+    <string name="reply_maps_search">বস, ম্যাপে %1$s দেখাচ্ছি।</string>
+    <string name="reply_close_app">বস, অ্যাপ বন্ধ করা হচ্ছে। ভালো থাকবেন।</string>
+    <string name="reply_stop_listening">বস, ভয়েস লিসেনিং সাময়িক থামানো হলো।</string>
+    <string name="reply_resume_listening">বস, আমি শুনছি। আপনার নির্দেশ দিন।</string>
+    <string name="reply_unrecognized_command">বস, আপনার নির্দেশটি বুঝতে পারিনি। দয়া করে আবার বলুন।</string>
+
+    <!-- নোটিফিকেশন ও সার্ভিস বার্তা -->
+    <string name="service_notification_title">Jarvis Bangla Voice Assistant</string>
+    <string name="service_notification_text">জারভিস সক্রিয় রয়েছে। যেকোনো সময় কথা বলুন।</string>
+    <string name="permission_required_warning">বস, মাইক্রোফোন, কল ও কন্টাক্ট পারমিশন প্রয়োজন।</string>
+    <string name="btn_grant_permissions">পারমিশন দিন</string>
 </resources>

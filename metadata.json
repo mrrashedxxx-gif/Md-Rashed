@@ -1,6 +1,6 @@
 {
-  "name": "MrRobot",
-  "description": "MrRobot - Advanced multilingual personal AI voice assistant with native Android app actions, voice calling, contacts lookup, phone locking, and WhatsApp integration.",
+  "name": "Jarvis Bangla",
+  "description": "Jarvis Bangla Voice Assistant - বাংলা ভয়েস অ্যাসিস্ট্যান্ট যা ভয়েস কমান্ড দিয়ে অ্যাপ ওপেন, কল, হোয়াটসঅ্যাপ মেসেজ, এসএমএস, ফ্ল্যাশলাইট ও সার্চ নিয়ন্ত্রণ করে।",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

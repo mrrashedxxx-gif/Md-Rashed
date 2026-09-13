@@ -2,9 +2,7 @@ package com.example
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.example.bridge.AndroidActionBridge
-import com.example.device.AndroidDeviceController
-import org.json.JSONObject
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -13,78 +11,71 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * জারভিস বাংলা রোবোলেক্ট্রিক টেস্ট
+ */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [34])
 class ExampleRobolectricTest {
 
-  @Test
-  fun `read app name from context`() {
-    val context = ApplicationProvider.getApplicationContext<Context>()
-    val appName = context.getString(R.string.app_name)
-    assertEquals("MrRobot", appName)
-  }
+    @Test
+    fun `read app name from context`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val appName = context.getString(R.string.app_name)
+        assertEquals("Jarvis Bangla", appName)
+    }
 
-  @Test
-  fun `verify all 9 android action bridge methods`() {
-    val context = ApplicationProvider.getApplicationContext<Context>()
-    val controller = AndroidDeviceController(context)
-    val bridge = AndroidActionBridge(controller)
+    @Test
+    fun `verify bengali numeral normalization in call helper`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val callHelper = CallHelper(context)
 
-    assertTrue(bridge.isNativeBridge())
+        val normalized = callHelper.normalizePhoneNumber("০১৭১২৩৪৫৬৭৮")
+        assertEquals("01712345678", normalized)
 
-    // 1. openWhatsApp
-    val waJsonStr = bridge.openWhatsApp()
-    val waJson = JSONObject(waJsonStr)
-    assertEquals("openWhatsApp", waJson.getString("action"))
-    assertNotNull(waJson.getString("message"))
+        val mixed = callHelper.normalizePhoneNumber("কল করো +৮৮০১৭০০০০০০০০")
+        assertEquals("+8801700000000", mixed)
+    }
 
-    // 2. openApp
-    val appJsonStr = bridge.openApp("Settings")
-    val appJson = JSONObject(appJsonStr)
-    assertEquals("openApp", appJson.getString("action"))
-    assertNotNull(appJson.getString("message"))
+    @Test
+    fun `verify command handler responses start with boss address`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val appLauncher = AppLauncher(context)
+        val contactHelper = ContactHelper(context)
+        val callHelper = CallHelper(context)
+        val whatsAppHelper = WhatsAppHelper(context)
+        val smsHelper = SMSHelper(context)
+        val flashlightHelper = FlashlightHelper(context)
 
-    // 3. openUrl
-    val urlJsonStr = bridge.openUrl("https://www.google.com")
-    val urlJson = JSONObject(urlJsonStr)
-    assertEquals("openUrl", urlJson.getString("action"))
-    assertTrue(urlJson.getBoolean("success"))
+        val handler = CommandHandler(
+            context = context,
+            appLauncher = appLauncher,
+            contactHelper = contactHelper,
+            callHelper = callHelper,
+            whatsAppHelper = whatsAppHelper,
+            smsHelper = smsHelper,
+            flashlightHelper = flashlightHelper
+        )
 
-    // 4. makeCall & Bengali numerals normalization
-    val callJsonStr = bridge.makeCall("9876543210")
-    val callJson = JSONObject(callJsonStr)
-    assertEquals("makeCall", callJson.getString("action"))
-    assertEquals("9876543210", callJson.getString("phoneNumber"))
+        // সময় কমান্ড টেস্ট
+        val timeResult = handler.handleCommand("সময় কত")
+        assertTrue(timeResult.replyText.startsWith("বস"))
 
-    val bengaliCallJsonStr = bridge.makeCall("০১৮৯০২৬০৬৬৪")
-    val bengaliCallJson = JSONObject(bengaliCallJsonStr)
-    assertEquals("makeCall", bengaliCallJson.getString("action"))
-    assertEquals("01890260664", bengaliCallJson.getString("phoneNumber"))
+        // তারিখ কমান্ড টেস্ট
+        val dateResult = handler.handleCommand("আজকের তারিখ")
+        assertTrue(dateResult.replyText.startsWith("বস"))
 
-    // 5. callContact
-    val contactJsonStr = bridge.callContact("Mom")
-    val contactJson = JSONObject(contactJsonStr)
-    assertEquals("callContact", contactJson.getString("action"))
-    assertEquals("Mom", contactJson.getString("contactName"))
+        // বার কমান্ড টেস্ট
+        val dayResult = handler.handleCommand("আজ কি বার")
+        assertTrue(dayResult.replyText.startsWith("বস"))
 
-    // 6. checkPermission
-    val micGranted = bridge.checkPermission("microphone")
-    // Should return boolean without crashing
+        // ইউটিউব কমান্ড টেস্ট
+        val ytResult = handler.handleCommand("ইউটিউব")
+        assertTrue(ytResult.replyText.startsWith("বস"))
+        assertTrue(ytResult.replyText.contains("ইউটিউব"))
 
-    // 7. requestPermission
-    val reqPermStr = bridge.requestPermission("microphone")
-    val reqPermJson = JSONObject(reqPermStr)
-    assertEquals("requestPermission", reqPermJson.getString("action"))
-    assertEquals("microphone", reqPermJson.getString("permissionName"))
-
-    // 8. getPermissionStatus
-    val status = bridge.getPermissionStatus("microphone")
-    assertTrue(status in listOf("GRANTED", "DENIED", "NOT_REQUESTED"))
-
-    // 9. lockPhone
-    val lockJsonStr = bridge.lockPhone()
-    val lockJson = JSONObject(lockJsonStr)
-    assertEquals("lockPhone", lockJson.getString("action"))
-    assertNotNull(lockJson.getString("status"))
-  }
+        // ফেসবুক কমান্ড টেস্ট
+        val fbResult = handler.handleCommand("ফেসবুক")
+        assertTrue(fbResult.replyText.startsWith("বস"))
+    }
 }

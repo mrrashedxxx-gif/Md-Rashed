@@ -40,37 +40,53 @@ class ContactHelper(private val context: Context) {
      * @return ContactInfo বা খুঁজে না পেলে null
      */
     fun findContact(targetName: String): ContactInfo? {
+        return findMatchingContacts(targetName).firstOrNull()
+    }
+
+    /**
+     * কন্টাক্ট নাম বা সম্পর্ক দিয়ে সমস্ত সম্ভাব্য কন্টাক্ট খুঁজে বের করা
+     * (একাধিক কন্টাক্ট থাকলে যাচাই করার জন্য)
+     */
+    fun findMatchingContacts(targetName: String): List<ContactInfo> {
         val query = targetName.trim().lowercase()
-        if (query.isEmpty()) return null
+        if (query.isEmpty()) return emptyList()
 
         Log.d(TAG, "কন্টাক্ট অনুসন্ধান করা হচ্ছে: $targetName")
+        val results = mutableListOf<ContactInfo>()
 
         // ১. সরাসরি নাম দিয়ে কন্টাক্ট প্রোভাইডারে অনুসন্ধান
-        var matched = searchInContactsProvider(targetName)
-        if (matched != null) return matched
+        results.addAll(searchAllInContactsProvider(targetName))
 
         // ২. সম্পর্কের ওরফে (Alias) অনুসন্ধান
         for ((key, aliases) in RELATION_ALIASES) {
             if (query.contains(key) || aliases.any { it.equals(query, ignoreCase = true) }) {
                 for (alias in aliases) {
-                    val aliasMatch = searchInContactsProvider(alias)
-                    if (aliasMatch != null) {
-                        Log.d(TAG, "সম্পর্কের মাধ্যমে কন্টাক্ট পাওয়া গেছে: ${aliasMatch.name}")
-                        return aliasMatch
+                    val aliasMatches = searchAllInContactsProvider(alias)
+                    for (m in aliasMatches) {
+                        if (results.none { it.phoneNumber == m.phoneNumber }) {
+                            results.add(m)
+                        }
                     }
                 }
             }
         }
 
         // ৩. আংশিক নামের মিল অনুসন্ধান
-        matched = searchPartialMatch(query)
-        return matched
+        val partialMatches = searchAllPartialMatch(query)
+        for (m in partialMatches) {
+            if (results.none { it.phoneNumber == m.phoneNumber }) {
+                results.add(m)
+            }
+        }
+
+        return results.distinctBy { it.phoneNumber }
     }
 
     /**
-     * অ্যান্ড্রয়েড কন্টাক্টস কন্টেন্ট প্রোভাইডারে কুয়েরি চালানো
+     * অ্যান্ড্রয়েড কন্টাক্টস কন্টেন্ট প্রোভাইডারে একাধিক ম্যাচ কুয়েরি চালানো
      */
-    private fun searchInContactsProvider(nameToFind: String): ContactInfo? {
+    private fun searchAllInContactsProvider(nameToFind: String): List<ContactInfo> {
+        val list = mutableListOf<ContactInfo>()
         var cursor: Cursor? = null
         try {
             val projection = arrayOf(
@@ -88,16 +104,18 @@ class ContactHelper(private val context: Context) {
                 null
             )
 
-            if (cursor != null && cursor.moveToFirst()) {
+            if (cursor != null) {
                 val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
 
-                val displayName = cursor.getString(nameIndex) ?: nameToFind
-                val rawNumber = cursor.getString(numberIndex) ?: ""
-                val cleanNumber = sanitizePhoneNumber(rawNumber)
+                while (cursor.moveToNext()) {
+                    val displayName = cursor.getString(nameIndex) ?: nameToFind
+                    val rawNumber = cursor.getString(numberIndex) ?: ""
+                    val cleanNumber = sanitizePhoneNumber(rawNumber)
 
-                if (cleanNumber.isNotEmpty()) {
-                    return ContactInfo(displayName, cleanNumber)
+                    if (cleanNumber.isNotEmpty() && list.none { it.phoneNumber == cleanNumber }) {
+                        list.add(ContactInfo(displayName, cleanNumber))
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -105,13 +123,14 @@ class ContactHelper(private val context: Context) {
         } finally {
             cursor?.close()
         }
-        return null
+        return list
     }
 
     /**
-     * ফোনে সংরক্ষিত সব কন্টাক্ট স্ক্যান করে সবচেয়ে কাছাকাছি নামের মিল বের করা
+     * ফোনে সংরক্ষিত সব কন্টাক্ট স্ক্যান করে আংশিক নামের মিল বের করা
      */
-    private fun searchPartialMatch(normalizedQuery: String): ContactInfo? {
+    private fun searchAllPartialMatch(normalizedQuery: String): List<ContactInfo> {
+        val list = mutableListOf<ContactInfo>()
         var cursor: Cursor? = null
         try {
             val projection = arrayOf(
@@ -137,8 +156,8 @@ class ContactHelper(private val context: Context) {
 
                     if (name.lowercase().contains(normalizedQuery) || normalizedQuery.contains(name.lowercase())) {
                         val cleanNumber = sanitizePhoneNumber(number)
-                        if (cleanNumber.isNotEmpty()) {
-                            return ContactInfo(name, cleanNumber)
+                        if (cleanNumber.isNotEmpty() && list.none { it.phoneNumber == cleanNumber }) {
+                            list.add(ContactInfo(name, cleanNumber))
                         }
                     }
                 }
@@ -148,7 +167,7 @@ class ContactHelper(private val context: Context) {
         } finally {
             cursor?.close()
         }
-        return null
+        return list
     }
 
     /**

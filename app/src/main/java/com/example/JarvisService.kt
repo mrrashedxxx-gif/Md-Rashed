@@ -365,19 +365,41 @@ class JarvisService : Service() {
 
             _jarvisReply.value = result.replyText
 
-            // জারভিসের কণ্ঠস্বর আউটপুট
+            // জারভিসের প্রথম ধাপের তাৎক্ষণিক প্রতিক্রিয়া (Stage 1 Immediate Acknowledgement)
             speechSynthesizer?.speak(result.replyText) {
                 mainHandler.post {
                     if (result.shouldCloseApp) {
                         stopHandsFreeInternal(announce = false)
                         stopForeground(true)
                         stopSelf()
-                    } else if (result.shouldPauseListening) {
+                        return@post
+                    }
+
+                    if (result.shouldStopHandsFree || result.shouldPauseListening) {
                         stopHandsFreeInternal(announce = false)
-                    } else if (result.shouldResumeListening) {
+                        return@post
+                    }
+
+                    if (result.shouldResumeListening) {
                         startHandsFreeInternal(announce = false, customAnnounce = null)
+                        return@post
+                    }
+
+                    // যদি ২য় ধাপের ভেরিফায়েড রেসপন্স থাকে (Stage 2 Verification)
+                    val verifiedText = result.stage2VerifiedReply
+                    if (!verifiedText.isNullOrBlank() && verifiedText != result.replyText) {
+                        _jarvisReply.value = verifiedText
+                        speechSynthesizer?.speak(verifiedText) {
+                            mainHandler.post {
+                                if (_isHandsFreeActive.value) {
+                                    voiceAssistant?.resumeListeningAfterSpeech(450)
+                                } else {
+                                    _assistantState.value = AssistantState.IDLE
+                                }
+                            }
+                        }
                     } else {
-                        // সফল কমান্ড এবং কথা শেষ হওয়ার পর হ্যান্ডস-ফ্রি চালু থাকলে পুনরায় শোনা শুরু
+                        // কথা শেষ হওয়ার পর হ্যান্ডস-ফ্রি চালু থাকলে পুনরায় শোনা শুরু (Listen Again)
                         if (_isHandsFreeActive.value) {
                             voiceAssistant?.resumeListeningAfterSpeech(450)
                         } else {
@@ -478,7 +500,7 @@ class JarvisService : Service() {
         val isListening = _isHandsFreeActive.value
         val title = getString(R.string.service_notification_title)
         val text = if (isListening) {
-            getString(R.string.service_notification_text)
+            getString(R.string.notification_handsfree_text)
         } else {
             getString(R.string.status_idle)
         }

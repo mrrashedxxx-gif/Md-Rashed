@@ -84,4 +84,47 @@
     <string name="reply_handsfree_ready">বস, আমি প্রস্তুত।</string>
     <string name="reply_handsfree_resumed">বস, আমি আবার শুনছি।</string>
     <string name="reply_handsfree_stopped">বস, আমি এখন শুনছি না।</string>
+    <string name="reply_handsfree_stop_mode">বস, Hands-Free Mode বন্ধ করছি।</string>
+    <string name="notification_handsfree_text">বস, Jarvis Hands-Free Mode চালু আছে।</string>
+
+    <!-- অ্যাক্সেসিবিলিটি সার্ভিস ও কন্ট্রোল বার্তা -->
+    <string name="accessibility_service_description">জারভিস বাংলা সম্পূর্ণ ভয়েস অ্যাসিস্ট্যান্ট নিয়ন্ত্রণ ও স্ক্রিন নেভিগেশন সার্ভিস।</string>
+    <string name="reply_accessibility_permission_required">বস, অ্যাপের ভিতরের voice control চালাতে Accessibility permission প্রয়োজন।</string>
+    <string name="reply_accessibility_opened">বস, অ্যাক্সেসিবিলিটি সেটিংস খুলছি। জারভিস চালু করে দিন।</string>
+
+    <!-- ২য় ধাপ ভেরিফিকেশন ও স্টেজ বার্তা -->
+    <string name="reply_youtube_opened">বস, YouTube খুলেছি।</string>
+    <string name="reply_youtube_search_success">বস, %1$s search করা হয়েছে।</string>
+    <string name="reply_youtube_media_paused">বস, ভিডিও pause করছি।</string>
+    <string name="reply_youtube_media_resumed">বস, ভিডিও চালু করছি।</string>
+    <string name="reply_action_scroll_down">বস, নিচে যাচ্ছি।</string>
+    <string name="reply_action_scroll_up">বস, উপরে যাচ্ছি।</string>
+    <string name="reply_action_back">বস, পেছনে ফিরে যাচ্ছি।</string>
+
+    <!-- ফেসবুক ও টিকটক -->
+    <string name="reply_facebook_opened">বস, Facebook খুলেছি।</string>
+    <string name="reply_facebook_profile">বস, প্রোফাইল খুলছি।</string>
+    <string name="reply_facebook_home">বস, Facebook হোমে যাচ্ছি।</string>
+    <string name="reply_facebook_search">বস, Facebook-এ %1$s search করছি।</string>
+    <string name="reply_tiktok_opened">বস, TikTok খুলেছি।</string>
+    <string name="reply_tiktok_search">বস, TikTok-এ %1$s search করছি।</string>
+    <string name="reply_option_not_found">বস, এই অপশনটি এখন খুঁজে পাচ্ছি না।</string>
+
+    <!-- হোয়াটসঅ্যাপ ও যোগাযোগ বার্তা -->
+    <string name="reply_whatsapp_chat_opening">বস, %1$s-এর WhatsApp chat খুলছি।</string>
+    <string name="reply_whatsapp_chat_opened">বস, %1$s-এর chat খুলেছি।</string>
+    <string name="reply_whatsapp_confirm_send">বস, %1$s-কে “%2$s” পাঠাব?</string>
+    <string name="reply_whatsapp_confirmed_sent">বস, মেসেজ পাঠানো হয়েছে।</string>
+    <string name="reply_whatsapp_cancelled">বস, মেসেজ পাঠানো বাতিল করা হয়েছে।</string>
+    <string name="reply_contact_multiple">বস, %1$s নামে একাধিক contact আছে। কোনজনকে বলছেন?</string>
+    <string name="reply_calling_user">বস, %1$s-কে কল করছি।</string>
+    <string name="reply_number_invalid">বস, নম্বরটি ঠিকমতো বুঝতে পারিনি।</string>
+
+    <!-- সার্বজনীন যাচাইকরণ ও নো-ফলস-সাকসেস বার্তা -->
+    <string name="reply_search_completed">বস, search সম্পন্ন হয়েছে।</string>
+    <string name="reply_search_failed">বস, search করতে পারিনি।</string>
+    <string name="reply_action_completed">বস, কাজটি সম্পন্ন হয়েছে।</string>
+    <string name="reply_action_unverified">বস, কাজটি সম্পন্ন হয়েছে কিনা নিশ্চিত করতে পারছি না।</string>
+    <string name="reply_action_failed">বস, কাজটি করতে পারিনি।</string>
+    <string name="reply_app_open_timeout">বস, %1$s খুলেছে কিনা নিশ্চিত করতে পারছি না।</string>
 </resources>

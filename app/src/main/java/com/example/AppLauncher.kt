@@ -42,6 +42,11 @@ class AppLauncher(private val context: Context) {
     /**
      * নির্দিষ্ট প্যাকেজ নাম দিয়ে অ্যাপ চালু করা
      */
+    fun launchApp(packageName: String): Boolean = launchPackage(packageName)
+
+    /**
+     * নির্দিষ্ট প্যাকেজ নাম দিয়ে অ্যাপ চালু করা (ফলব্যাক ওয়েব ইউআরএল সহ)
+     */
     fun launchPackage(packageName: String, fallbackUrl: String? = null): Boolean {
         return try {
             val pm = context.packageManager

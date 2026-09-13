@@ -153,6 +153,11 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // অ্যাক্সেসিবিলিটি সেটিংস বাটন
+        binding.btnAccessibility.setOnClickListener {
+            JarvisAccessibilityService.openAccessibilitySettings(this)
+        }
+
         // পারমিশন রিকোয়েস্ট বাটন
         binding.btnPermissionRequest.setOnClickListener {
             permissionManager.checkAndRequestPermissions()

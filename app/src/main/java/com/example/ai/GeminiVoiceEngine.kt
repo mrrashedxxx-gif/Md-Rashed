@@ -650,6 +650,39 @@ class GeminiVoiceEngine(
             return
         }
 
+        // 8b. Lock Phone / Screen Lock (Master Prompt Section 19 & Device Administrator)
+        val isLockCommand = lower.contains("lock phone") || lower.contains("lock screen") ||
+                lower.contains("lock my phone") || lower.contains("screen lock") ||
+                lower.contains("phone lock") || lower.contains("lock device") ||
+                lower.contains("ফোন লক") || lower.contains("স্ক্রিন লক") ||
+                lower.contains("ফোনটা লক") || lower.contains("মোবাইল লক") ||
+                lower.contains("স্ক্রিন বন্ধ") || lower.contains("ডিসপ্লে বন্ধ") ||
+                lower.contains("লক করো") || lower.contains("লক কর") ||
+                lower.contains("লক করুন") || lower.contains("ফোন লক করো") ||
+                lower.contains("ফোন লক কর") || lower.contains("ফোন লক করুন") ||
+                lower.contains("phone lock karo") || lower.contains("screen lock karo") ||
+                lower.contains("phone lock koro") || lower.contains("screen lock koro") ||
+                lower.contains("फोन लॉक") || lower.contains("स्क्रीन लॉक")
+
+        if (isLockCommand) {
+            val res = deviceController.lockPhone()
+            val reply = if (res.success) {
+                if (isBengaliInput(input)) "ফোন লক করে দিচ্ছি।" else if (isHindiInput(lower)) "फ़ोन लॉक कर रहा हूँ।" else "Locking your phone screen now."
+            } else {
+                res.message
+            }
+            addMessage(
+                ChatMessage(
+                    sender = MessageSender.MRROBOT,
+                    text = reply,
+                    actionBadge = "lockPhone()",
+                    actionSuccess = res.success
+                )
+            )
+            speakResponse(reply)
+            return
+        }
+
         // 9. Conversational default
         val defaultReply = if (isBengaliInput(input)) {
             "আমি বুঝতে পেরেছি! আপনি বলতে পারেন: 'WhatsApp খোলো', 'ফোন লক করো', '০১৮৯০২৬০৬৬৪ এ কল করো', বা 'মাকে কল করো'।"

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.databinding.ActivityMainBinding
+import com.example.device.AndroidDeviceController
 import kotlinx.coroutines.launch
 
 /**
@@ -168,6 +169,11 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // জেটপ্যাক কম্পোজ ভিজ্যুয়ালাইজার স্ক্রিন ওপেন বাটন
+        binding.btnComposeVisualizer.setOnClickListener {
+            VoiceVisualizerActivity.start(this)
+        }
+
         // অ্যাক্সেসিবিলিটি সেটিংস বাটন
         binding.btnAccessibility.setOnClickListener {
             JarvisAccessibilityService.openAccessibilitySettings(this)
@@ -185,6 +191,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // দ্রুত সাজেশনের চিপস
+        binding.chipLockPhone.setOnClickListener { executeCommand("ফোন লক করো") }
         binding.chipYoutube.setOnClickListener { executeCommand("ইউটিউব") }
         binding.chipWhatsapp.setOnClickListener { executeCommand("হোয়াটসঅ্যাপ") }
         binding.chipCallMom.setOnClickListener { executeCommand("মাকে ফোন দাও") }
@@ -193,6 +200,16 @@ class MainActivity : AppCompatActivity() {
         binding.chipMusic.setOnClickListener { executeCommand("গান বাজাও") }
         binding.chipTorch.setOnClickListener { executeCommand("ফ্ল্যাশলাইট অন") }
         binding.chipFacebook.setOnClickListener { executeCommand("ফেসবুক") }
+
+        // ডিভাইস অ্যাডমিন বাটন (ভয়েস স্ক্রিন লক কনফিগারেশন)
+        binding.btnDeviceAdmin.setOnClickListener {
+            val deviceController = AndroidDeviceController(this)
+            if (deviceController.isDeviceAdminActive()) {
+                deviceController.lockPhone()
+            } else {
+                deviceController.requestDeviceAdminActivation()
+            }
+        }
     }
 
     /**

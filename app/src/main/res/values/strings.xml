@@ -137,4 +137,11 @@
     <string name="reply_action_unverified">বস, কাজটি সম্পন্ন হয়েছে কিনা নিশ্চিত করতে পারছি না।</string>
     <string name="reply_action_failed">বস, কাজটি করতে পারিনি।</string>
     <string name="reply_app_open_timeout">বস, %1$s খুলেছে কিনা নিশ্চিত করতে পারছি না।</string>
+
+    <!-- ডিভাইস অ্যাডমিনিস্ট্রেটর ও স্ক্রিন লক বার্তা -->
+    <string name="device_admin_label">MrRobot Device Admin</string>
+    <string name="device_admin_description">MrRobot needs device administrator privileges to programmatically lock the phone screen upon receiving a voice command.</string>
+    <string name="reply_phone_locked">বস, ফোন লক করে দিচ্ছি।</string>
+    <string name="reply_device_admin_required">বস, স্ক্রিন লক করার জন্য Device Administrator সক্রিয় করতে হবে। অনুগ্রহ করে অনুমতি দিন।</string>
+    <string name="btn_device_admin">🛡️ ডিভাইস অ্যাডমিন</string>
 </resources>

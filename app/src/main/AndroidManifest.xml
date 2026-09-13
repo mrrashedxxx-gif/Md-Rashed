@@ -91,6 +91,14 @@
             </intent-filter>
         </activity>
 
+        <!-- জেটপ্যাক কম্পোজ ভয়েস ভিজ্যুয়ালাইজার স্ক্রিন -->
+        <activity
+            android:name=".VoiceVisualizerActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyApplication" />
+
         <!-- জারভিস ব্যাকগ্রাউন্ড ফোরগ্রাউন্ড সার্ভিস -->
         <service
             android:name=".JarvisService"
@@ -111,6 +119,21 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!-- MrRobot ডিভাইস অ্যাডমিনিস্ট্রেটর রিসিভার (ভয়েস স্ক্রিন লক) -->
+        <receiver
+            android:name=".device.MrRobotDeviceAdminReceiver"
+            android:description="@string/device_admin_description"
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

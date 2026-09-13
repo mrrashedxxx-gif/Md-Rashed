@@ -2,6 +2,7 @@ package com.example
 
 import android.content.Context
 import android.util.Log
+import com.example.device.AndroidDeviceController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -455,6 +456,37 @@ class CommandHandler(
             val target = command.replace("ক্লিক করো", "").replace("চাপ দাও", "").trim()
             val res = genericAppController.clickElement(target)
             return CommandResult(replyText = res.immediateText, stage2VerifiedReply = res.verifiedText)
+        }
+
+        // ==========================================
+        // ১১. ডিভাইস অ্যাডমিনিস্ট্রেটর: স্ক্রিন ও ফোন লক (Device Administrator Screen Lock)
+        // ==========================================
+        val isLockCommand = command.contains("ফোন লক") || command.contains("স্ক্রিন লক") ||
+                command.contains("ফোনটা লক") || command.contains("মোবাইল লক") ||
+                command.contains("স্ক্রিন বন্ধ") || command.contains("ডিসপ্লে বন্ধ") ||
+                command.contains("লক করো") || command.contains("লক করুন") ||
+                command.contains("lock phone") || command.contains("lock screen") ||
+                command.contains("screen lock") || command.contains("phone lock") ||
+                command.contains("lock the phone") || command.contains("lock my phone") ||
+                command.contains("phone lock karo") || command.contains("phone lock koro") ||
+                command.contains("screen lock koro")
+
+        if (isLockCommand) {
+            val deviceController = AndroidDeviceController(context)
+            val execResult = deviceController.lockPhone()
+            return if (execResult.success) {
+                CommandResult(
+                    replyText = context.getString(R.string.reply_phone_locked),
+                    stage2VerifiedReply = "বস, স্ক্রিন সফলভাবে লক করা হয়েছে।"
+                )
+            } else {
+                CommandResult(
+                    replyText = execResult.message,
+                    stage2VerifiedReply = if (execResult.status == "PERMISSION_REQUIRED") {
+                        context.getString(R.string.reply_device_admin_required)
+                    } else null
+                )
+            }
         }
 
         // ডিফল্ট গুগল অনুসন্ধান (লেয়ার ১)

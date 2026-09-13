@@ -131,4 +131,50 @@ class ExampleRobolectricTest {
         assertTrue(!result.isPhoneStateGranted)
         assertTrue(!result.areAllRequestedGranted)
     }
+
+    @Test
+    fun `verify listening state enum values and transitions`() {
+        val states = com.example.ui.components.ListeningState.values()
+        assertEquals(4, states.size)
+        assertTrue(states.contains(com.example.ui.components.ListeningState.IDLE))
+        assertTrue(states.contains(com.example.ui.components.ListeningState.LISTENING))
+        assertTrue(states.contains(com.example.ui.components.ListeningState.THINKING))
+        assertTrue(states.contains(com.example.ui.components.ListeningState.SPEAKING))
+    }
+
+    @Test
+    fun `verify voice visualizer activity creation`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val intent = Intent(context, VoiceVisualizerActivity::class.java)
+        assertNotNull(intent)
+        assertEquals(VoiceVisualizerActivity::class.java.name, intent.component?.className)
+    }
+
+    @Test
+    fun `verify device admin receiver and lock phone command`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val adminReceiver = com.example.device.MrRobotDeviceAdminReceiver()
+        assertNotNull(adminReceiver)
+
+        val appLauncher = AppLauncher(context)
+        val contactHelper = ContactHelper(context)
+        val callHelper = CallHelper(context)
+        val whatsAppHelper = WhatsAppHelper(context)
+        val smsHelper = SMSHelper(context)
+        val flashlightHelper = FlashlightHelper(context)
+
+        val handler = CommandHandler(
+            context = context,
+            appLauncher = appLauncher,
+            contactHelper = contactHelper,
+            callHelper = callHelper,
+            whatsAppHelper = whatsAppHelper,
+            smsHelper = smsHelper,
+            flashlightHelper = flashlightHelper
+        )
+
+        val result = handler.handleCommand("ফোন লক করো")
+        assertNotNull(result)
+        assertTrue(result.replyText.isNotEmpty())
+    }
 }

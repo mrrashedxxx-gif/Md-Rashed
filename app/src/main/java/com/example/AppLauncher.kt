@@ -230,21 +230,8 @@ class AppLauncher(private val context: Context) {
     fun openPlayStoreApp(): Boolean = launchPackage(PKG_PLAY_STORE, "https://play.google.com")
 
     fun searchGoogle(query: String): Boolean {
-        return try {
-            val encoded = URLEncoder.encode(query, "UTF-8")
-            val intent = Intent(Intent.ACTION_WEB_SEARCH).apply {
-                putExtra("query", query)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-                true
-            } else {
-                openWebUrl("https://www.google.com/search?q=$encoded")
-            }
-        } catch (e: Exception) {
-            openWebUrl("https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8"))
-        }
+        val helper = GoogleSearchHelper(context)
+        return helper.performWebSearch(query, isRawSpokenInput = false).success
     }
 
     fun searchMaps(locationQuery: String): Boolean {

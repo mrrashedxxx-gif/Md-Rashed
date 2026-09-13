@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.ContextCompat
 
 sealed class ContactLookupResult {
@@ -513,6 +514,35 @@ class AndroidDeviceController(private val context: Context) {
     }
 
     /**
+     * Checks if MrRobot Device Administrator is currently active.
+     */
+    fun isDeviceAdminActive(): Boolean {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager ?: return false
+        val adminComponent = ComponentName(context, MrRobotDeviceAdminReceiver::class.java)
+        return dpm.isAdminActive(adminComponent)
+    }
+
+    /**
+     * Requests user activation for Device Administrator safely via system dialog.
+     */
+    fun requestDeviceAdminActivation() {
+        val adminComponent = ComponentName(context, MrRobotDeviceAdminReceiver::class.java)
+        try {
+            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
+                putExtra(
+                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                    "MrRobot needs screen lock permission to lock your phone upon voice command."
+                )
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("AndroidDeviceController", "Device admin activation intent failed", e)
+        }
+    }
+
+    /**
      * 9. lockPhone()
      * Locks the Android device screen using official Android-supported mechanism.
      * (Master Prompt Section 19 & 20)
@@ -540,6 +570,7 @@ class AndroidDeviceController(private val context: Context) {
                     status = "SUCCESS"
                 )
             } catch (e: Exception) {
+                Log.e("AndroidDeviceController", "dpm.lockNow() error", e)
                 ExecutionResult(
                     success = false,
                     action = "lockPhone",
@@ -549,24 +580,12 @@ class AndroidDeviceController(private val context: Context) {
             }
         } else {
             // Prompt user to enable Device Administrator capability safely
-            try {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                    putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
-                    putExtra(
-                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        "MrRobot needs screen lock permission to lock your phone upon voice command."
-                    )
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Ignore if settings intent unavailable
-            }
+            requestDeviceAdminActivation()
 
             return ExecutionResult(
                 success = false,
                 action = "lockPhone",
-                message = "Phone lock feature-এর জন্য Android-এর প্রয়োজনীয় security access enable করতে হবে।",
+                message = "ফোন লক করার জন্য Device Administrator পারমিশন সক্রিয় করতে হবে। অনুগ্রহ করে অনুমতি দিন।",
                 status = "PERMISSION_REQUIRED"
             )
         }

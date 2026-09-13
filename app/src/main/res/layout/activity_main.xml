@@ -47,6 +47,18 @@
                 android:letterSpacing="0.02" />
         </LinearLayout>
 
+        <!-- জেটপ্যাক কম্পোজ ভিজ্যুয়ালাইজার বাটন -->
+        <Button
+            android:id="@+id/btnComposeVisualizer"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="@color/chip_bg"
+            android:text="🎙️ ভিজ্যুয়াল মাইক"
+            android:textColor="@color/arc_reactor_cyan"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
         <!-- ব্যবহারকারী সম্বোধন "বস" ব্যাজ -->
         <TextView
             android:id="@+id/tvUserBadge"
@@ -218,6 +230,18 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/chipLockPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="7dp"
+                android:text="🔒 ফোন লক করো"
+                android:textColor="@color/text_white"
+                android:textSize="12sp" />
+
+            <TextView
                 android:id="@+id/chipYoutube"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -336,6 +360,17 @@
             android:textColor="@color/text_white"
             android:textSize="12sp"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnDeviceAdmin"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="@color/chip_bg"
+            android:text="@string/btn_device_admin"
+            android:textColor="@color/arc_reactor_cyan"
+            android:textSize="11sp" />
 
         <Button
             android:id="@+id/btnAccessibility"
